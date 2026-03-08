@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的儀表板</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --border: #e8e6e0;
+    --text-primary: #1a1916;
+    --text-secondary: #7a776e;
+    --text-muted: #b0ac9f;
+    --accent: #2d6a4f;
+    --accent-light: #e8f3ee;
+    --red: #c0392b;
+    --red-light: #fdf0ee;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Noto Sans TC', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* Top Bar */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  .site-title {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--text-primary);
+    text-transform: uppercase;
+  }
+
+  .topbar-date {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
+
+  .topbar-time {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 300;
+    color: var(--text-primary);
+    letter-spacing: 0.04em;
+  }
+
+  /* Layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    grid-template-rows: auto auto;
+    gap: 1px;
+    background: var(--border);
+    min-height: calc(100vh - 57px);
+  }
+
+  .panel {
+    background: var(--surface);
+    padding: 28px;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .panel:nth-child(1) { animation-delay: 0.05s; }
+  .panel:nth-child(2) { animation-delay: 0.1s; }
+  .panel:nth-child(3) { animation-delay: 0.15s; grid-column: 1; }
+  .panel:nth-child(4) { animation-delay: 0.2s; grid-column: 2; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Panel Header */
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .panel-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  /* ── TODO ── */
+  .todo-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .todo-input {
+    flex: 1;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .todo-input:focus { border-color: var(--accent); }
+  .todo-input::placeholder { color: var(--text-muted); }
+
+  .todo-add-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 4px;
+    padding: 8px 14px;
+    font-family: var(--mono);
+    font-size: 16px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+
+  .todo-add-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+  .todo-list { list-style: none; }
+
+  .todo-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    group: true;
+  }
+
+  .todo-item:last-child { border-bottom: none; }
+
+  .todo-check {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    background: transparent;
+    font-size: 10px;
+    color: transparent;
+  }
+
+  .todo-item.done .todo-check {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .todo-text {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-primary);
+    transition: all 0.15s;
+  }
+
+  .todo-item.done .todo-text {
+    color: var(--text-muted);
+    text-decoration: line-through;
+  }
+
+  .todo-del {
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+    background: none;
+    border: none;
+    padding: 2px 4px;
+    font-family: var(--mono);
+  }
+
+  .todo-item:hover .todo-del { opacity: 1; }
+
+  .todo-priority {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .todo-priority.low { background: var(--border); }
+  .todo-priority.mid { background: #e09000; }
+  .todo-priority.high { background: var(--red); }
+
+  /* ── STOCKS ── */
+  .stocks-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stock-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 4px;
+    background: var(--bg);
+    transition: background 0.15s;
+  }
+
+  .stock-row:hover { background: var(--border); }
+
+  .stock-left { min-width: 0; }
+
+  .stock-symbol {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--text-primary);
+  }
+
+  .stock-name {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .stock-price {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 400;
+    text-align: right;
+    color: var(--text-primary);
+  }
+
+  .stock-change {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-align: right;
+    padding: 2px 7px;
+    border-radius: 3px;
+    min-width: 60px;
+  }
+
+  .stock-change.up { color: var(--accent); background: var(--accent-light); }
+  .stock-change.down { color: var(--red); background: var(--red-light); }
+  .stock-change.flat { color: var(--text-muted); background: var(--bg); }
+
+  .stocks-note {
+    margin-top: 14px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .live-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .add-stock-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .stock-symbol-input {
+    flex: 1;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s;
+    text-transform: uppercase;
+  }
+
+  .stock-symbol-input:focus { border-color: var(--accent); }
+  .stock-symbol-input::placeholder { color: var(--text-muted); text-transform: none; }
+
+  .stock-add-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .stock-add-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* ── CALENDAR ── */
+  .cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .cal-month {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .cal-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    width: 26px; height: 26px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-secondary);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cal-btn:hover { background: var(--text-primary); color: white; border-color: var(--text-primary); }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+  }
+
+  .cal-day-name {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    padding: 6px 0;
+    text-transform: uppercase;
+  }
+
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.12s;
+    position: relative;
+  }
+
+  .cal-day:hover { background: var(--border); color: var(--text-primary); }
+  .cal-day.other-month { color: var(--text-muted); opacity: 0.4; }
+  .cal-day.today {
+    background: var(--text-primary);
+    color: white;
+    font-weight: 500;
+  }
+
+  .cal-day.selected {
+    background: var(--accent);
+    color: white;
+  }
+
+  .cal-day .event-dot {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .cal-day.today .event-dot { background: white; }
+
+  /* Events */
+  .events-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .events-header {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .event-add-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .event-input {
+    flex: 1;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-family: var(--sans);
+    font-size: 12px;
+    outline: none;
+    color: var(--text-primary);
+    transition: border-color 0.15s;
+  }
+
+  .event-input:focus { border-color: var(--accent); }
+  .event-input::placeholder { color: var(--text-muted); }
+
+  .event-save-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-secondary);
+  }
+
+  .event-save-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+  .event-list { list-style: none; }
+
+  .event-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  .event-item:last-child { border-bottom: none; }
+
+  .event-date-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .event-text { color: var(--text-primary); flex: 1; }
+
+  .event-del {
+    font-size: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    opacity: 0;
+    background: none;
+    border: none;
+    font-family: var(--mono);
+    transition: opacity 0.15s;
+  }
+
+  .event-item:hover .event-del { opacity: 1; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .panel:nth-child(3) { grid-column: 1; }
+    .panel:nth-child(4) { grid-column: 1; }
+  }
+
+  .loading-spinner {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border: 1.5px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state {
+    text-align: center;
+    padding: 24px 0;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="site-title">Dashboard</span>
+    <span class="topbar-date" id="topbar-date"></span>
+  </div>
+  <div class="topbar-time" id="topbar-time"></div>
+</div>
+
+<div class="layout">
+
+  <!-- TODO Panel -->
+  <div class="panel" style="grid-column:1; grid-row:1;">
+    <div class="panel-header">
+      <span class="panel-title">待辦事項</span>
+      <span class="panel-count" id="todo-count"></span>
+    </div>
+    <div class="todo-input-row">
+      <input class="todo-input" id="todo-input" placeholder="新增待辦…" type="text" maxlength="80">
+      <button class="todo-add-btn" onclick="addTodo()">+</button>
+    </div>
+    <ul class="todo-list" id="todo-list"></ul>
+    <div class="empty-state" id="todo-empty" style="display:none">— 沒有待辦事項 —</div>
+  </div>
+
+  <!-- Stocks Panel -->
+  <div class="panel" style="grid-column:2; grid-row:1 / span 2;">
+    <div class="panel-header">
+      <span class="panel-title">市場數據</span>
+      <span class="panel-count" id="stocks-updated"></span>
+    </div>
+    <div class="stocks-grid" id="stocks-list"></div>
+    <div class="add-stock-row">
+      <input class="stock-symbol-input" id="stock-input" placeholder="新增代號，例如 AAPL / 0050.TW" maxlength="12">
+      <button class="stock-add-btn" onclick="addStock()">加入</button>
+    </div>
+    <div class="stocks-note">
+      <span class="live-dot"></span>
+      資料來自 Yahoo Finance，每 60 秒自動更新
+    </div>
+  </div>
+
+  <!-- Calendar Panel -->
+  <div class="panel" style="grid-column:1; grid-row:2;">
+    <div class="panel-header">
+      <span class="panel-title">行事曆</span>
+    </div>
+    <div class="cal-nav">
+      <button class="cal-btn" onclick="changeMonth(-1)">‹</button>
+      <span class="cal-month" id="cal-month-label"></span>
+      <button class="cal-btn" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+
+    <div class="events-section">
+      <div class="events-header" id="events-header">事件</div>
+      <div class="event-add-row">
+        <input class="event-input" id="event-input" placeholder="新增事件…" maxlength="50">
+        <button class="event-save-btn" onclick="addEvent()">記下</button>
+      </div>
+      <ul class="event-list" id="event-list"></ul>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── CLOCK ──
+function updateClock() {
+  const now = new Date();
+  const days = ['日','一','二','三','四','五','六'];
+  document.getElementById('topbar-time').textContent =
+    now.toTimeString().slice(0,8);
+  document.getElementById('topbar-date').textContent =
+    `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}  週${days[now.getDay()]}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ── STORAGE HELPERS ──
+function load(key, def) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; }
+}
+function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+// ── TODOS ──
+let todos = load('todos', []);
+
+function renderTodos() {
+  const list = document.getElementById('todo-list');
+  const empty = document.getElementById('todo-empty');
+  const count = document.getElementById('todo-count');
+  const remaining = todos.filter(t => !t.done).length;
+  count.textContent = remaining > 0 ? `${remaining} 未完成` : '全部完成 ✓';
+  if (todos.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  list.innerHTML = todos.map((t, i) => `
+    <li class="todo-item ${t.done ? 'done' : ''}">
+      <div class="todo-check" onclick="toggleTodo(${i})">✓</div>
+      <div class="todo-priority ${t.priority||'low'}" title="切換優先度" onclick="cyclePriority(${i})"></div>
+      <span class="todo-text">${escHtml(t.text)}</span>
+      <button class="todo-del" onclick="deleteTodo(${i})">✕</button>
+    </li>
+  `).join('');
+}
+
+function addTodo() {
+  const inp = document.getElementById('todo-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  todos.unshift({ text, done: false, priority: 'low' });
+  save('todos', todos);
+  inp.value = '';
+  renderTodos();
+}
+
+function toggleTodo(i) {
+  todos[i].done = !todos[i].done;
+  save('todos', todos);
+  renderTodos();
+}
+
+function deleteTodo(i) {
+  todos.splice(i, 1);
+  save('todos', todos);
+  renderTodos();
+}
+
+function cyclePriority(i) {
+  const map = { low: 'mid', mid: 'high', high: 'low' };
+  todos[i].priority = map[todos[i].priority || 'low'];
+  save('todos', todos);
+  renderTodos();
+}
+
+document.getElementById('todo-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTodo();
+});
+
+renderTodos();
+
+// ── STOCKS ──
+let stockSymbols = load('stocks', ['AAPL', 'TSLA', 'SPY', '0050.TW', '2330.TW', 'BTC-USD']);
+let stockData = {};
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+const STOCK_NAMES = {
+  'AAPL': 'Apple', 'TSLA': 'Tesla', 'MSFT': 'Microsoft', 'GOOGL': 'Alphabet',
+  'AMZN': 'Amazon', 'META': 'Meta', 'NVDA': 'NVIDIA', 'SPY': 'S&P 500 ETF',
+  'QQQ': 'Nasdaq ETF', 'VTI': 'Total Market ETF', 'BND': 'Bond ETF',
+  '0050.TW': '元大台灣50', '0056.TW': '元大高股息', '2330.TW': '台積電',
+  '2317.TW': '鴻海', '2454.TW': '聯發科', '6505.TW': '台塑化',
+  'BTC-USD': 'Bitcoin', 'ETH-USD': 'Ethereum',
+};
+
+function getFriendlyName(sym) {
+  return STOCK_NAMES[sym.toUpperCase()] || sym;
+}
+
+async function fetchSingleStock(symbol) {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=2d`;
+  try {
+    const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+    const json = await res.json();
+    const data = JSON.parse(json.contents);
+    const meta = data.chart.result[0].meta;
+    const price = meta.regularMarketPrice;
+    const prev = meta.chartPreviousClose || meta.previousClose;
+    const change = ((price - prev) / prev * 100);
+    return { symbol, price, change, name: getFriendlyName(symbol) };
+  } catch {
+    return { symbol, price: null, change: null, name: getFriendlyName(symbol) };
+  }
+}
+
+async function fetchAllStocks() {
+  document.getElementById('stocks-updated').innerHTML =
+    '<span class="loading-spinner"></span>更新中…';
+  const results = await Promise.all(stockSymbols.map(fetchSingleStock));
+  results.forEach(r => { if (r.price !== null) stockData[r.symbol] = r; });
+  renderStocks();
+  const t = new Date();
+  document.getElementById('stocks-updated').textContent =
+    `更新 ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+}
+
+function renderStocks() {
+  const container = document.getElementById('stocks-list');
+  container.innerHTML = stockSymbols.map(sym => {
+    const d = stockData[sym];
+    const name = getFriendlyName(sym);
+    if (!d) return `
+      <div class="stock-row">
+        <div class="stock-left">
+          <div class="stock-symbol">${escHtml(sym)}</div>
+          <div class="stock-name">${escHtml(name)}</div>
+        </div>
+        <div class="stock-price">—</div>
+        <div class="stock-change flat">載入中</div>
+      </div>`;
+    const dir = d.change > 0.05 ? 'up' : d.change < -0.05 ? 'down' : 'flat';
+    const sign = d.change >= 0 ? '+' : '';
+    const priceStr = d.price < 10 ? d.price.toFixed(4) : d.price.toFixed(2);
+    return `
+      <div class="stock-row" style="position:relative">
+        <div class="stock-left">
+          <div class="stock-symbol">${escHtml(sym)}</div>
+          <div class="stock-name">${escHtml(name)}</div>
+        </div>
+        <div class="stock-price">${priceStr}</div>
+        <div class="stock-change ${dir}">${sign}${d.change.toFixed(2)}%</div>
+        <button onclick="removeStock('${sym}')" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);font-size:10px;cursor:pointer;opacity:0;transition:opacity 0.15s;font-family:var(--mono);padding:4px;" 
+          onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0">✕</button>
+      </div>`;
+  }).join('');
+}
+
+function addStock() {
+  const inp = document.getElementById('stock-input');
+  const sym = inp.value.trim().toUpperCase().replace(/\s/g,'');
+  if (!sym || stockSymbols.includes(sym)) { inp.value=''; return; }
+  stockSymbols.push(sym);
+  save('stocks', stockSymbols);
+  inp.value = '';
+  renderStocks();
+  fetchSingleStock(sym).then(r => { if(r.price) stockData[sym]=r; renderStocks(); });
+}
+
+function removeStock(sym) {
+  stockSymbols = stockSymbols.filter(s => s !== sym);
+  save('stocks', stockSymbols);
+  renderStocks();
+}
+
+document.getElementById('stock-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addStock();
+});
+
+fetchAllStocks();
+setInterval(fetchAllStocks, 60000);
+
+// ── CALENDAR ──
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let selectedDay = null;
+let events = load('events', {});
+
+function renderCalendar() {
+  const today = new Date();
+  const label = document.getElementById('cal-month-label');
+  const grid = document.getElementById('cal-grid');
+  label.textContent = `${calYear} / ${String(calMonth+1).padStart(2,'0')}`;
+
+  const dayNames = ['日','一','二','三','四','五','六'];
+  let html = dayNames.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const prevDays = new Date(calYear, calMonth, 0).getDate();
+
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const d = prevDays - i;
+    html += `<div class="cal-day other-month">${d}</div>`;
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
+    const dateKey = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isSel = dateKey === selectedDay;
+    const hasEv = events[dateKey] && events[dateKey].length > 0;
+    const cls = `cal-day${isToday ? ' today' : ''}${isSel ? ' selected' : ''}`;
+    html += `<div class="${cls}" onclick="selectDay('${dateKey}')">${d}${hasEv ? '<span class="event-dot"></span>' : ''}</div>`;
+  }
+
+  const total = firstDay + daysInMonth;
+  const remaining = (7 - (total % 7)) % 7;
+  for (let d = 1; d <= remaining; d++) {
+    html += `<div class="cal-day other-month">${d}</div>`;
+  }
+
+  grid.innerHTML = html;
+  renderEvents();
+}
+
+function selectDay(dateKey) {
+  selectedDay = dateKey;
+  renderCalendar();
+}
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+function renderEvents() {
+  const list = document.getElementById('event-list');
+  const header = document.getElementById('events-header');
+
+  // Show upcoming events (next 30 days)
+  const today = new Date();
+  const upcoming = [];
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if (events[key]) {
+      events[key].forEach((ev, j) => upcoming.push({ key, ev, idx: j, d }));
+    }
+  }
+
+  if (selectedDay) {
+    const [y,m,day] = selectedDay.split('-');
+    header.textContent = `${m}/${day} 的事件`;
+    const dayEvs = events[selectedDay] || [];
+    if (dayEvs.length === 0) {
+      list.innerHTML = '<div class="empty-state" style="padding:12px 0">— 無事件 —</div>';
+    } else {
+      list.innerHTML = dayEvs.map((ev, j) => `
+        <li class="event-item">
+          <span class="event-date-badge">${m}/${day}</span>
+          <span class="event-text">${escHtml(ev)}</span>
+          <button class="event-del" onclick="deleteEvent('${selectedDay}',${j})">✕</button>
+        </li>`).join('');
+    }
+  } else {
+    header.textContent = '近期事件';
+    if (upcoming.length === 0) {
+      list.innerHTML = '<div class="empty-state" style="padding:12px 0">— 無近期事件 —</div>';
+    } else {
+      list.innerHTML = upcoming.slice(0,8).map(({ key, ev, idx, d }) => {
+        const [y,m,day] = key.split('-');
+        return `<li class="event-item">
+          <span class="event-date-badge">${m}/${day}</span>
+          <span class="event-text">${escHtml(ev)}</span>
+          <button class="event-del" onclick="deleteEvent('${key}',${idx})">✕</button>
+        </li>`;
+      }).join('');
+    }
+  }
+}
+
+function addEvent() {
+  const inp = document.getElementById('event-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  const dateKey = selectedDay || (() => {
+    const t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+  })();
+  if (!events[dateKey]) events[dateKey] = [];
+  events[dateKey].push(text);
+  save('events', events);
+  inp.value = '';
+  renderCalendar();
+}
+
+function deleteEvent(dateKey, idx) {
+  events[dateKey].splice(idx, 1);
+  if (events[dateKey].length === 0) delete events[dateKey];
+  save('events', events);
+  renderCalendar();
+}
+
+document.getElementById('event-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addEvent();
+});
+
+renderCalendar();
+</script>
+</body>
+</html>
