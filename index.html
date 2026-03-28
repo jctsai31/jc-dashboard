@@ -627,7 +627,7 @@
     </div>
     <div class="stocks-grid" id="stocks-list"></div>
     <div class="add-stock-row">
-      <input class="stock-symbol-input" id="stock-input" placeholder="台股輸入代號如 2330，美股如 AAPL" maxlength="12">
+      <input class="stock-symbol-input" id="stock-input" placeholder="台股如 2330，美股如 AAPL，指數如 SOX" maxlength="12">
       <button class="stock-add-btn" onclick="addStock()">加入</button>
     </div>
     <div class="stocks-note">
@@ -799,6 +799,45 @@ async function loadTWSEPrices() {
   twseLoaded = true;
 }
 
+// ── 指數代號對照表（用戶輸入 → Yahoo Finance 代號）──
+const INDEX_MAP = {
+  'SOX': '^SOX', 'SPX': '^GSPC', 'IXIC': '^IXIC',
+  'VIX': '^VIX', 'DJI': '^DJI', 'TWII': '^TWII',
+  'NDX': '^NDX', 'RUT': '^RUT',
+};
+
+const INDEX_NAMES = {
+  'SOX':'費城半導體', 'SPX':'S&P 500', 'IXIC':'那斯達克',
+  'VIX':'恐慌指數', 'DJI':'道瓊', 'TWII':'台灣加權',
+  'NDX':'那斯達克100', 'RUT':'羅素2000',
+};
+
+// 合併進 STOCK_NAMES
+Object.assign(STOCK_NAMES, INDEX_NAMES);
+
+function isIndex(sym) {
+  return sym.toUpperCase() in INDEX_MAP;
+}
+
+// ── 指數：Yahoo Finance via corsproxy ──
+async function fetchYahooIndex(sym) {
+  const yfsym = INDEX_MAP[sym.toUpperCase()];
+  if (!yfsym) return null;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yfsym)}?interval=1d&range=5d`;
+  try {
+    const res = await fetch(PROXY + encodeURIComponent(url), { signal: AbortSignal.timeout(12000) });
+    const raw = await res.text();
+    const data = JSON.parse(raw);
+    const meta = data?.chart?.result?.[0]?.meta;
+    if (!meta) return null;
+    const price = meta.regularMarketPrice ?? meta.previousClose;
+    const prev  = meta.chartPreviousClose ?? meta.previousClose;
+    if (!price || !prev) return null;
+    return { price, change: (price - prev) / prev * 100 };
+  } catch(e) { console.warn('Yahoo 指數失敗', sym, e); }
+  return null;
+}
+
 // ── 美股/加密貨幣：Finnhub（收盤價）──
 async function fetchFinnhub(sym) {
   const isCrypto = ['BTC','ETH','SOL','BNB','XRP','ADA','DOGE'].includes(sym.toUpperCase());
@@ -820,7 +859,7 @@ async function fetchAllStocks() {
   document.getElementById('stocks-updated').innerHTML =
     '<span class="loading-spinner"></span>更新中…';
 
-  // 載入台股資料（只載入一次，或每小時重載）
+  // 載入台股資料
   if (!twseLoaded) await loadTWSEPrices();
 
   // 逐一更新
@@ -829,24 +868,28 @@ async function fetchAllStocks() {
       const cached = twseCache[sym];
       if (cached) {
         stockData[sym] = {
-          symbol: sym,
-          name: getFriendlyName(sym),
-          price: cached.price,
-          change: null,   // 官方 API 無漲跌幅
-          market: cached.market,
+          symbol: sym, name: getFriendlyName(sym),
+          price: cached.price, change: null, market: cached.market,
         };
       }
+    } else if (isIndex(sym)) {
+      const r = await fetchYahooIndex(sym);
+      if (r) {
+        stockData[sym] = {
+          symbol: sym, name: getFriendlyName(sym),
+          price: r.price, change: r.change,
+        };
+      }
+      await new Promise(res => setTimeout(res, 300));
     } else {
       const r = await fetchFinnhub(sym);
       if (r) {
         stockData[sym] = {
-          symbol: sym,
-          name: getFriendlyName(sym),
-          price: r.price,
-          change: r.change,
+          symbol: sym, name: getFriendlyName(sym),
+          price: r.price, change: r.change,
         };
       }
-      await new Promise(res => setTimeout(res, 120)); // Finnhub rate limit
+      await new Promise(res => setTimeout(res, 120));
     }
   }
 
@@ -970,6 +1013,10 @@ function addStock() {
       stockData[sym] = { symbol: sym, name: getFriendlyName(sym), price: twseCache[sym].price, change: null };
       renderStocks();
     }
+  } else if (isIndex(sym)) {
+    fetchYahooIndex(sym).then(r => {
+      if (r) { stockData[sym] = { symbol: sym, name: getFriendlyName(sym), price: r.price, change: r.change }; renderStocks(); }
+    });
   } else {
     fetchFinnhub(sym).then(r => {
       if (r) { stockData[sym] = { symbol: sym, name: getFriendlyName(sym), price: r.price, change: r.change }; renderStocks(); }
