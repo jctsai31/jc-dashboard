@@ -819,22 +819,31 @@ function isIndex(sym) {
   return sym.toUpperCase() in INDEX_MAP;
 }
 
-// ── 指數：Yahoo Finance via corsproxy ──
+// ── 指數：Yahoo Finance via allorigins ──
 async function fetchYahooIndex(sym) {
   const yfsym = INDEX_MAP[sym.toUpperCase()];
   if (!yfsym) return null;
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yfsym)}?interval=1d&range=5d`;
-  try {
-    const res = await fetch(PROXY + encodeURIComponent(url), { signal: AbortSignal.timeout(12000) });
-    const raw = await res.text();
-    const data = JSON.parse(raw);
-    const meta = data?.chart?.result?.[0]?.meta;
-    if (!meta) return null;
-    const price = meta.regularMarketPrice ?? meta.previousClose;
-    const prev  = meta.chartPreviousClose ?? meta.previousClose;
-    if (!price || !prev) return null;
-    return { price, change: (price - prev) / prev * 100 };
-  } catch(e) { console.warn('Yahoo 指數失敗', sym, e); }
+  const proxies = [
+    `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  ];
+  for (const proxyUrl of proxies) {
+    try {
+      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(12000) });
+      if (!res.ok) continue;
+      const outer = await res.json();
+      // allorigins 把結果包在 contents 裡，corsproxy 直接回傳
+      const raw = outer.contents ?? JSON.stringify(outer);
+      const data = JSON.parse(raw);
+      const meta = data?.chart?.result?.[0]?.meta;
+      if (!meta) continue;
+      const price = meta.regularMarketPrice ?? meta.previousClose;
+      const prev  = meta.chartPreviousClose ?? meta.previousClose;
+      if (!price || !prev) continue;
+      return { price, change: (price - prev) / prev * 100 };
+    } catch(e) { console.warn('Yahoo 指數失敗', sym, proxyUrl, e); }
+  }
   return null;
 }
 
