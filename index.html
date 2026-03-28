@@ -858,17 +858,23 @@ async function fetchAllStocks() {
 
 function renderStocks() {
   const container = document.getElementById('stocks-list');
-  container.innerHTML = stockSymbols.map(sym => {
+  container.innerHTML = stockSymbols.map((sym, idx) => {
     const d = stockData[sym];
     const name = getFriendlyName(sym);
+
+    const baseStyle = `position:relative; cursor:grab;`;
+
     if (!d || !d.price) return `
-      <div class="stock-row">
+      <div class="stock-row" style="${baseStyle}" draggable="true" data-sym="${escHtml(sym)}" data-idx="${idx}"
+        ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dragDrop(event)" ondragend="dragEnd(event)">
         <div class="stock-left">
           <div class="stock-symbol">${escHtml(sym)}</div>
           <div class="stock-name">${escHtml(name)}</div>
         </div>
         <div class="stock-price">—</div>
         <div class="stock-change flat">—</div>
+        <button onclick="removeStock('${sym}')" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);font-size:10px;cursor:pointer;opacity:0;transition:opacity 0.15s;font-family:var(--mono);padding:4px;"
+          onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0">✕</button>
       </div>`;
 
     const priceStr = d.price >= 100 ? d.price.toFixed(2)
@@ -885,7 +891,8 @@ function renderStocks() {
     }
 
     return `
-      <div class="stock-row" style="position:relative">
+      <div class="stock-row" style="${baseStyle}" draggable="true" data-sym="${escHtml(sym)}" data-idx="${idx}"
+        ondragstart="dragStart(event)" ondragover="dragOver(event)" ondrop="dragDrop(event)" ondragend="dragEnd(event)">
         <div class="stock-left">
           <div class="stock-symbol">${escHtml(sym)}</div>
           <div class="stock-name">${escHtml(name)}</div>
@@ -896,6 +903,43 @@ function renderStocks() {
           onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0">✕</button>
       </div>`;
   }).join('');
+}
+
+// ── 拖拉排序 ──
+let dragSrcIdx = null;
+
+function dragStart(e) {
+  dragSrcIdx = parseInt(e.currentTarget.dataset.idx);
+  e.currentTarget.style.opacity = '0.4';
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  // 視覺提示：目標列上方顯示線
+  document.querySelectorAll('.stock-row').forEach(r => r.style.borderTop = '');
+  e.currentTarget.style.borderTop = '2px solid var(--accent)';
+  return false;
+}
+
+function dragDrop(e) {
+  e.preventDefault();
+  const targetIdx = parseInt(e.currentTarget.dataset.idx);
+  if (dragSrcIdx === null || dragSrcIdx === targetIdx) return;
+  // 重新排列
+  const moved = stockSymbols.splice(dragSrcIdx, 1)[0];
+  stockSymbols.splice(targetIdx, 0, moved);
+  save('stocks', stockSymbols);
+  renderStocks();
+}
+
+function dragEnd(e) {
+  dragSrcIdx = null;
+  document.querySelectorAll('.stock-row').forEach(r => {
+    r.style.opacity = '1';
+    r.style.borderTop = '';
+  });
 }
 
 function addStock() {
