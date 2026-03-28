@@ -67,6 +67,33 @@
     letter-spacing: 0.06em;
   }
 
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .topbar-link {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 12px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .topbar-link:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
   .topbar-time {
     font-family: var(--mono);
     font-size: 18px;
@@ -570,7 +597,10 @@
     <span class="site-title">Dashboard</span>
     <span class="topbar-date" id="topbar-date"></span>
   </div>
-  <div class="topbar-time" id="topbar-time"></div>
+  <div class="topbar-right">
+    <a class="topbar-link" href="https://jctsai31.github.io/tw-market-50-200-52-trend" target="_blank">台股廣度指標</a>
+    <div class="topbar-time" id="topbar-time"></div>
+  </div>
 </div>
 
 <div class="layout">
@@ -778,7 +808,7 @@ function renderStocks() {
         </div>
         <div class="stock-price">${priceStr}</div>
         <div class="stock-change ${dir}">${sign}${d.change.toFixed(2)}%</div>
-        <button onclick="removeStock('${sym}')" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);font-size:10px;cursor:pointer;opacity:0;transition:opacity 0.15s;font-family:var(--mono);padding:4px;" 
+        <button onclick="removeStock('${sym}')" style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);font-size:10px;cursor:pointer;opacity:0;transition:opacity 0.15s;font-family:var(--mono);padding:4px;"
           onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0">✕</button>
       </div>`;
   }).join('');
@@ -867,7 +897,6 @@ function renderEvents() {
   const list = document.getElementById('event-list');
   const header = document.getElementById('events-header');
 
-  // Show upcoming events (next 30 days)
   const today = new Date();
   const upcoming = [];
   for (let i = 0; i < 30; i++) {
