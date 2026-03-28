@@ -766,31 +766,34 @@ function isTWStock(sym) {
   return /^\d{4,6}$/.test(sym);
 }
 
-// ── 台股：TWSE + TPEX 官方 API（收盤價）──
-const twseCache = {};   // stock_id -> {price, date}
+// ── 台股：TWSE + TPEX 官方 API（收盤價，透過 corsproxy）──
+const twseCache = {};
 let twseLoaded = false;
+const PROXY = 'https://corsproxy.io/?';
 
 async function loadTWSEPrices() {
   try {
-    // 上市
-    const r1 = await fetch('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL', { signal: AbortSignal.timeout(10000) });
+    const url1 = 'https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL';
+    const r1 = await fetch(PROXY + encodeURIComponent(url1), { signal: AbortSignal.timeout(15000) });
     const d1 = await r1.json();
     d1.forEach(s => {
-      const p = parseFloat(s.ClosingPrice);
-      if (s.Code && !isNaN(p)) twseCache[s.Code] = { price: p, market: '上市' };
+      const p = parseFloat((s.ClosingPrice || '').replace(/,/g, ''));
+      if (s.Code && !isNaN(p) && p > 0) twseCache[s.Code] = { price: p, market: '上市' };
     });
+    console.log('TWSE 上市載入：', Object.keys(twseCache).length, '筆');
   } catch(e) { console.warn('TWSE 上市失敗', e); }
 
   try {
-    // 上櫃
-    const r2 = await fetch('https://www.tpex.org.tw/openapi/v1/tpex_mainboard_quotes', { signal: AbortSignal.timeout(10000) });
+    const url2 = 'https://www.tpex.org.tw/openapi/v1/tpex_mainboard_quotes';
+    const r2 = await fetch(PROXY + encodeURIComponent(url2), { signal: AbortSignal.timeout(15000) });
     const d2 = await r2.json();
     d2.forEach(s => {
-      const p = parseFloat(s.Close);
-      if (s.SecuritiesCompanyCode && !isNaN(p)) {
+      const p = parseFloat((s.Close || '').replace(/,/g, ''));
+      if (s.SecuritiesCompanyCode && !isNaN(p) && p > 0) {
         twseCache[s.SecuritiesCompanyCode] = { price: p, market: '上櫃' };
       }
     });
+    console.log('TPEX 上櫃載入後總計：', Object.keys(twseCache).length, '筆');
   } catch(e) { console.warn('TPEX 上櫃失敗', e); }
 
   twseLoaded = true;
@@ -798,18 +801,16 @@ async function loadTWSEPrices() {
 
 // ── 美股/加密貨幣：Finnhub（收盤價）──
 async function fetchFinnhub(sym) {
-  // 加密貨幣用 BINANCE:BTCUSDT 格式
   const isCrypto = ['BTC','ETH','SOL','BNB','XRP','ADA','DOGE'].includes(sym.toUpperCase());
   const fsym = isCrypto ? `BINANCE:${sym.toUpperCase()}USDT` : sym.toUpperCase();
   try {
     const res = await fetch(
       `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(fsym)}&token=${FINNHUB_TOKEN}`,
-      { signal: AbortSignal.timeout(8000) }
+      { signal: AbortSignal.timeout(10000) }
     );
     const data = await res.json();
-    // pc = previous close, c = current price
     if (data && data.pc && data.pc > 0) {
-      return { price: data.pc, change: data.pc > 0 ? (data.c - data.pc) / data.pc * 100 : null };
+      return { price: data.pc, change: (data.c - data.pc) / data.pc * 100 };
     }
   } catch(e) { console.warn('Finnhub 失敗', sym, e); }
   return null;
