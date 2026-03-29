@@ -5,6 +5,90 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DASHBOARD // SYSTEM</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDAzTvcahBkUvuzIQuvtuj5EOnGH7tF-f4",
+    authDomain: "jc-dashboard-327fc.firebaseapp.com",
+    projectId: "jc-dashboard-327fc",
+    storageBucket: "jc-dashboard-327fc.firebasestorage.app",
+    messagingSenderId: "22341047372",
+    appId: "1:22341047372:web:1109870449c7f27a74d0e9"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+  const REF = doc(db, 'dashboard', 'data');
+
+  // ── 讀取資料 ──
+  async function loadFromFirebase() {
+    try {
+      const snap = await getDoc(REF);
+      if (snap.exists()) {
+        const d = snap.data();
+        if (d.todos)   { localStorage.setItem('todos',  JSON.stringify(d.todos));  }
+        if (d.stocks)  { localStorage.setItem('stocks', JSON.stringify(d.stocks)); }
+        if (d.events)  { localStorage.setItem('events', JSON.stringify(d.events)); }
+        if (d.links)   { localStorage.setItem('links',  JSON.stringify(d.links));  }
+        console.log('Firebase 資料載入完成');
+      }
+    } catch(e) { console.warn('Firebase 讀取失敗', e); }
+  }
+
+  // ── 寫入資料 ──
+  async function saveToFirebase() {
+    try {
+      const todos  = JSON.parse(localStorage.getItem('todos')  || '[]');
+      const stocks = JSON.parse(localStorage.getItem('stocks') || '[]');
+      const events = JSON.parse(localStorage.getItem('events') || '{}');
+      const links  = JSON.parse(localStorage.getItem('links')  || '[]');
+      await setDoc(REF, { todos, stocks, events, links });
+    } catch(e) { console.warn('Firebase 寫入失敗', e); }
+  }
+
+  // ── 即時監聽（其他裝置修改時自動更新）──
+  let firstLoad = true;
+  onSnapshot(REF, snap => {
+    if (firstLoad) { firstLoad = false; return; }
+    if (snap.exists()) {
+      const d = snap.data();
+      if (d.todos)   localStorage.setItem('todos',  JSON.stringify(d.todos));
+      if (d.stocks)  localStorage.setItem('stocks', JSON.stringify(d.stocks));
+      if (d.events)  localStorage.setItem('events', JSON.stringify(d.events));
+      if (d.links)   localStorage.setItem('links',  JSON.stringify(d.links));
+      // 重新渲染
+      if (window.renderTodos)    window.renderTodos();
+      if (window.renderStocks)   window.renderStocks();
+      if (window.renderCalendar) window.renderCalendar();
+      if (window.renderLinks)    window.renderLinks();
+      console.log('Firebase 即時更新');
+    }
+  });
+
+  // ── 監聽 localStorage 變動，自動同步到 Firebase ──
+  const _setItem = localStorage.setItem.bind(localStorage);
+  localStorage.setItem = function(key, val) {
+    _setItem(key, val);
+    if (['todos','stocks','events','links'].includes(key)) {
+      saveToFirebase();
+    }
+  };
+
+  // 啟動時先從 Firebase 載入
+  window.addEventListener('DOMContentLoaded', async () => {
+    await loadFromFirebase();
+    // 重新渲染（資料已更新）
+    setTimeout(() => {
+      if (window.renderTodos)    window.renderTodos();
+      if (window.renderStocks)   { window.stockSymbols = JSON.parse(localStorage.getItem('stocks') || '["AAPL","NVDA","SPY","BTC","2330","0050","2454","00878"]'); window.renderStocks(); window.fetchAllStocks(); }
+      if (window.renderCalendar) { window.events = JSON.parse(localStorage.getItem('events') || '{}'); window.renderCalendar(); }
+      if (window.renderLinks)    { window.links  = JSON.parse(localStorage.getItem('links')  || '[]'); window.renderLinks(); }
+    }, 300);
+  });
+</script>
 <style>
   :root {
     --bg:        #080808;
@@ -1151,6 +1235,13 @@ document.getElementById('stock-input').addEventListener('keydown', e => { if(e.k
 fetchAllStocks();
 setInterval(fetchAllStocks, 3600000);
 
+// 掛到 window 供 Firebase 模組呼叫
+window.renderTodos    = renderTodos;
+window.renderStocks   = renderStocks;
+window.fetchAllStocks = fetchAllStocks;
+window.stockSymbols   = stockSymbols;
+window.stockData      = stockData;
+
 // ── CALENDAR ──
 let calYear=new Date().getFullYear(), calMonth=new Date().getMonth(), selectedDay=null, events=load('events',{});
 
@@ -1222,6 +1313,10 @@ function deleteEvent(dateKey,idx){
 document.getElementById('event-input').addEventListener('keydown', e=>{ if(e.key==='Enter') addEvent(); });
 renderCalendar();
 
+// 掛到 window 供 Firebase 模組呼叫
+window.renderCalendar = renderCalendar;
+window.events         = events;
+
 // ── LINKS ──
 const DEFAULT_LINKS = [
   { name: 'Gmail',        url: 'https://mail.google.com',        icon: '📧' },
@@ -1271,6 +1366,10 @@ function deleteLink(e, i) {
 
 document.getElementById('link-url-input').addEventListener('keydown', e => { if(e.key==='Enter') addLink(); });
 renderLinks();
+
+// 掛到 window 供 Firebase 模組呼叫
+window.renderLinks = renderLinks;
+window.links       = links;
 </script>
 </body>
 </html>
