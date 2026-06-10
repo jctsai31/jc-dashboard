@@ -7,16 +7,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg-dark:#1A1F2E; --surface:#FFFFFF; --border:#DDE3EA; --border-dk:#252D40;
-    --text-1:#1A2535; --text-2:#5A7080; --text-3:#9AACBA;
-    --accent:#3B7DD8; --green:#2A7A5A; --green-bg:#E8F5EE; --red:#C04040; --red-bg:#FCEAEA;
-    --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif;
-    --panel:#F8FAFB;
+    --bg-dark:#1A1F2E;--border-dk:#252D40;--text-3:#9AACBA;
+    --accent:#3B7DD8;--green:#2A7A5A;--red:#C04040;
+    --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:var(--sans);background:var(--bg-dark);color:#CDD8E8;min-height:100vh;font-size:14px;}
-
-  /* TOPBAR — 和主頁完全一致 */
   .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:52px;background:var(--bg-dark);border-bottom:1px solid var(--border-dk);position:sticky;top:0;z-index:100;}
   .topbar-left{display:flex;align-items:center;gap:20px;}
   .site-title{font-size:13px;font-weight:300;letter-spacing:0.22em;color:#CDD8E8;text-transform:uppercase;}
@@ -26,68 +22,46 @@
   .topbar-link.active{color:#CDD8E8;border-color:#3B7DD8;background:#1E3560;}
   .topbar-time{font-family:var(--mono);font-size:18px;color:#CDD8E8;letter-spacing:0.04em;}
   .topbar-date{font-family:var(--mono);font-size:11px;color:#4A6580;}
-
-  /* MAIN */
   main{max-width:1080px;margin:0 auto;padding:28px 24px 60px;}
-
-  /* STATUS PILL */
   .status-pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;font-weight:500;padding:4px 12px;border-radius:20px;}
-  .pill-warn {background:rgba(192,64,64,0.15);border:1px solid rgba(192,64,64,0.4);color:#E08080;}
+  .pill-warn{background:rgba(192,64,64,0.15);border:1px solid rgba(192,64,64,0.4);color:#E08080;}
   .pill-watch{background:rgba(200,140,40,0.15);border:1px solid rgba(200,140,40,0.4);color:#E0B060;}
-  .pill-ok   {background:rgba(42,122,90,0.15); border:1px solid rgba(42,122,90,0.4); color:#60C090;}
-
-  /* ALERT */
+  .pill-ok{background:rgba(42,122,90,0.15);border:1px solid rgba(42,122,90,0.4);color:#60C090;}
+  .pill-info{background:rgba(59,125,216,0.15);border:1px solid rgba(59,125,216,0.4);color:#7AB0E8;}
   .alert-box{border-radius:8px;padding:11px 16px;font-size:13px;margin-bottom:20px;display:none;line-height:1.6;}
-  .alert-warn {background:rgba(192,64,64,0.12);border:1px solid rgba(192,64,64,0.3);color:#E08080;}
+  .alert-warn{background:rgba(192,64,64,0.12);border:1px solid rgba(192,64,64,0.3);color:#E08080;}
   .alert-watch{background:rgba(200,140,40,0.12);border:1px solid rgba(200,140,40,0.3);color:#E0B060;}
-
-  /* STAT CARDS */
   .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px;}
   .stat-card{background:#1F2840;border:1px solid var(--border-dk);border-radius:10px;padding:14px 16px;}
   .stat-label{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#4A6580;}
   .stat-value{font-family:var(--mono);font-size:22px;font-weight:500;margin-top:6px;line-height:1.1;}
   .stat-sub{font-size:11px;color:#4A6580;margin-top:4px;font-family:var(--mono);}
-
-  /* CHART CARD */
   .card{background:#1F2840;border:1px solid var(--border-dk);border-radius:10px;padding:20px;margin-bottom:16px;}
   .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
   .card-title{font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#7A9BB8;}
   .legend{display:flex;flex-wrap:wrap;gap:14px;}
   .leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#4A6580;}
   .leg-line{width:20px;height:2px;border-radius:1px;flex-shrink:0;}
-  .leg-dash-red {width:20px;height:0;border-top:2px dashed #C04040;flex-shrink:0;}
-  .leg-dash-green{width:20px;height:0;border-top:2px dashed #2A7A5A;flex-shrink:0;}
-
-  /* PERIOD GRID */
   .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
   @media(max-width:640px){.two-col{grid-template-columns:1fr;}}
   .bar-row{margin-bottom:10px;}
   .bar-meta{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}
   .bar-label{color:#4A6580;}
   .bar-track{height:5px;border-radius:3px;background:#252D40;overflow:hidden;}
-  .bar-fill{height:100%;border-radius:3px;transition:width 0.5s ease;}
-
-  /* EVENT TAGS */
+  .bar-fill{height:100%;border-radius:3px;}
   .evt-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;}
   .evt-tag{font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid;}
-  .evt-blue {background:rgba(59,125,216,0.1);border-color:rgba(59,125,216,0.3);color:#7AB0E8;}
+  .evt-blue{background:rgba(59,125,216,0.1);border-color:rgba(59,125,216,0.3);color:#7AB0E8;}
   .evt-amber{background:rgba(200,140,40,0.1);border-color:rgba(200,140,40,0.3);color:#E0B060;}
-  .evt-red  {background:rgba(192,64,64,0.1); border-color:rgba(192,64,64,0.3); color:#E08080;}
-  .evt-green{background:rgba(42,122,90,0.1); border-color:rgba(42,122,90,0.3); color:#60C090;}
-
-  /* INSIGHT */
+  .evt-red{background:rgba(192,64,64,0.1);border-color:rgba(192,64,64,0.3);color:#E08080;}
+  .evt-green{background:rgba(42,122,90,0.1);border-color:rgba(42,122,90,0.3);color:#60C090;}
   .insight-item{display:flex;gap:12px;align-items:flex-start;background:#252D40;border:1px solid var(--border-dk);border-radius:8px;padding:12px 14px;margin-bottom:8px;}
   .insight-icon{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
   .insight-title{font-size:13px;font-weight:600;margin-bottom:3px;color:#CDD8E8;}
   .insight-body{font-size:12px;color:#4A6580;line-height:1.7;}
-
-  /* FOOTER */
   footer{text-align:right;font-size:11px;color:#333D50;padding-top:8px;}
   footer a{color:#333D50;}
-
-  /* SKELETON */
-  .skeleton{background:linear-gradient(90deg,#1F2840 25%,#252D40 50%,#1F2840 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:6px;}
-  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  .update-note{font-size:11px;color:#4A6580;margin-top:6px;}
 </style>
 </head>
 <body>
@@ -98,31 +72,25 @@
     <span class="topbar-date" id="topbar-date"></span>
   </div>
   <div class="topbar-right">
-    <a class="topbar-link" href="https://jctsai31.github.io/jc-dashboard/" >← 主頁</a>
+    <a class="topbar-link" href="https://jctsai31.github.io/jc-dashboard/">← 主頁</a>
     <a class="topbar-link" href="https://jctsai31.github.io/tw-market-50-200-52-trend" target="_blank">台股廣度指標 ↗</a>
-    <a class="topbar-link active" href="#">那斯達克×PCE ↗</a>
+    <a class="topbar-link active" href="#">那斯達克×PCE</a>
     <div class="topbar-time" id="topbar-time"></div>
   </div>
 </div>
 
 <main>
-
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
     <div>
       <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#4A6580;margin-bottom:6px;">Market Monitor</div>
       <div style="font-size:20px;font-weight:300;letter-spacing:0.08em;color:#CDD8E8;">那斯達克 × 核心PCE 趨勢</div>
+      <div class="update-note" id="update-note">歷史數據：內建至 2026-04　最新數據：嘗試自動更新中…</div>
     </div>
     <span class="status-pill" id="status-pill" style="display:none;"></span>
   </div>
 
   <div class="alert-box" id="alert-box"></div>
-
-  <div class="stat-grid" id="stat-grid">
-    <div class="stat-card"><div class="stat-label">載入中</div><div class="skeleton" style="height:26px;width:90px;margin-top:8px;"></div></div>
-    <div class="stat-card"><div class="stat-label">載入中</div><div class="skeleton" style="height:26px;width:90px;margin-top:8px;"></div></div>
-    <div class="stat-card"><div class="stat-label">載入中</div><div class="skeleton" style="height:26px;width:90px;margin-top:8px;"></div></div>
-    <div class="stat-card"><div class="stat-label">載入中</div><div class="skeleton" style="height:26px;width:90px;margin-top:8px;"></div></div>
-  </div>
+  <div class="stat-grid" id="stat-grid"></div>
 
   <div class="card">
     <div class="card-header">
@@ -130,12 +98,12 @@
       <div class="legend">
         <div class="leg-item"><div class="leg-line" style="background:#3B7DD8;"></div>那斯達克（左軸）</div>
         <div class="leg-item"><div class="leg-line" style="background:#C04040;"></div>核心PCE（右軸）</div>
-        <div class="leg-item"><div class="leg-dash-red"></div>4% 警戒線</div>
-        <div class="leg-item"><div class="leg-dash-green"></div>Fed 目標 2%</div>
+        <div class="leg-item"><div style="width:20px;height:0;border-top:2px dashed #C04040;flex-shrink:0;"></div>4%警戒線</div>
+        <div class="leg-item"><div style="width:20px;height:0;border-top:2px dashed #2A7A5A;flex-shrink:0;"></div>Fed目標2%</div>
       </div>
     </div>
     <div style="position:relative;width:100%;height:320px;">
-      <canvas id="main-chart" role="img" aria-label="核心PCE與那斯達克10年雙軸趨勢圖"></canvas>
+      <canvas id="main-chart"></canvas>
     </div>
   </div>
 
@@ -151,14 +119,12 @@
   <div class="two-col">
     <div class="card" style="margin-bottom:0;">
       <div class="card-title" style="margin-bottom:14px;">分期相關性（Pearson r）</div>
-      <div id="period-bars"><div class="skeleton" style="height:130px;"></div></div>
+      <div id="period-bars"></div>
     </div>
     <div class="card" style="margin-bottom:0;">
       <div class="card-title" style="margin-bottom:6px;">Lead-Lag 分析（月）</div>
       <div style="font-size:11px;color:#4A6580;margin-bottom:10px;">PCE 領先那斯達克幾個月後相關最強？</div>
-      <div style="position:relative;width:100%;height:148px;">
-        <canvas id="lag-chart" role="img" aria-label="Lead-Lag相關係數圖"></canvas>
-      </div>
+      <div style="position:relative;width:100%;height:148px;"><canvas id="lag-chart"></canvas></div>
     </div>
   </div>
 
@@ -166,82 +132,134 @@
     <div class="card-header">
       <span class="card-title">散點圖：核心PCE vs 那斯達克月報酬率</span>
       <div class="legend">
-        <div class="leg-item"><span style="width:10px;height:10px;border-radius:2px;background:#2A7A5A;display:inline-block;"></span>PCE &lt; 2%</div>
+        <div class="leg-item"><span style="width:10px;height:10px;border-radius:2px;background:#2A7A5A;display:inline-block;"></span>PCE&lt;2%</div>
         <div class="leg-item"><span style="width:10px;height:10px;border-radius:2px;background:#3B7DD8;display:inline-block;"></span>2–4%</div>
-        <div class="leg-item"><span style="width:10px;height:10px;border-radius:2px;background:#C04040;display:inline-block;"></span>PCE &gt; 4%</div>
+        <div class="leg-item"><span style="width:10px;height:10px;border-radius:2px;background:#C04040;display:inline-block;"></span>PCE&gt;4%</div>
       </div>
     </div>
-    <div style="position:relative;width:100%;height:240px;">
-      <canvas id="scatter-chart" role="img" aria-label="散點圖"></canvas>
-    </div>
+    <div style="position:relative;width:100%;height:240px;"><canvas id="scatter-chart"></canvas></div>
   </div>
 
   <div class="card" style="margin-top:16px;">
     <div class="card-title" style="margin-bottom:14px;">專業解讀</div>
-    <div id="insight-list">
-      <div class="skeleton" style="height:64px;border-radius:8px;margin-bottom:8px;"></div>
-      <div class="skeleton" style="height:64px;border-radius:8px;"></div>
-    </div>
+    <div id="insight-list"></div>
   </div>
 
-  <footer>
-    資料來源：<a href="https://fred.stlouisfed.org" target="_blank">FRED（BEA / Nasdaq Inc.）</a>　每次開啟自動更新
-  </footer>
+  <footer>資料來源：<a href="https://fred.stlouisfed.org" target="_blank">FRED（BEA / Nasdaq Inc.）</a>　歷史數據內建，最新數據每次開啟自動嘗試更新</footer>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-// ════════════════════════════════════════════
-//  ★ 請把下面換成你的 FRED API Key
-//  申請（免費）：https://fred.stlouisfed.org/docs/api/api_key.html
-// ════════════════════════════════════════════
+// ═══════════════════════════════════════
+// FRED API Key（選填）— 有填則嘗試抓最新數據
+// 沒填或抓失敗也會顯示完整內建歷史數據
+// ═══════════════════════════════════════
 var FRED_KEY = '072b90d2b50fb20dc9785f305aa0f0f0';
-// ════════════════════════════════════════════
+// ═══════════════════════════════════════
 
-// Clock（與主頁同款）
+// ── 內建歷史數據（2015-01 ~ 2026-04）──
+var BUILTIN_LABELS = [
+  '2015-01','2015-02','2015-03','2015-04','2015-05','2015-06','2015-07','2015-08','2015-09','2015-10','2015-11','2015-12',
+  '2016-01','2016-02','2016-03','2016-04','2016-05','2016-06','2016-07','2016-08','2016-09','2016-10','2016-11','2016-12',
+  '2017-01','2017-02','2017-03','2017-04','2017-05','2017-06','2017-07','2017-08','2017-09','2017-10','2017-11','2017-12',
+  '2018-01','2018-02','2018-03','2018-04','2018-05','2018-06','2018-07','2018-08','2018-09','2018-10','2018-11','2018-12',
+  '2019-01','2019-02','2019-03','2019-04','2019-05','2019-06','2019-07','2019-08','2019-09','2019-10','2019-11','2019-12',
+  '2020-01','2020-02','2020-03','2020-04','2020-05','2020-06','2020-07','2020-08','2020-09','2020-10','2020-11','2020-12',
+  '2021-01','2021-02','2021-03','2021-04','2021-05','2021-06','2021-07','2021-08','2021-09','2021-10','2021-11','2021-12',
+  '2022-01','2022-02','2022-03','2022-04','2022-05','2022-06','2022-07','2022-08','2022-09','2022-10','2022-11','2022-12',
+  '2023-01','2023-02','2023-03','2023-04','2023-05','2023-06','2023-07','2023-08','2023-09','2023-10','2023-11','2023-12',
+  '2024-01','2024-02','2024-03','2024-04','2024-05','2024-06','2024-07','2024-08','2024-09','2024-10','2024-11','2024-12',
+  '2025-01','2025-02','2025-03','2025-04','2025-05','2025-06','2025-07','2025-08','2025-09','2025-10','2025-11','2025-12',
+  '2026-01','2026-02','2026-03','2026-04'
+];
+var BUILTIN_PCE = [
+  1.3,1.4,1.3,1.3,1.3,1.3,1.3,1.3,1.3,1.3,1.3,1.3,
+  1.7,1.7,1.6,1.6,1.6,1.6,1.6,1.7,1.7,1.7,1.7,1.7,
+  1.9,1.9,1.9,1.6,1.5,1.5,1.4,1.3,1.3,1.4,1.5,1.5,
+  1.5,1.6,1.9,2.0,2.0,2.0,2.0,2.0,2.0,1.9,1.9,1.9,
+  1.9,1.8,1.6,1.6,1.6,1.7,1.7,1.8,1.7,1.7,1.6,1.6,
+  1.7,1.8,1.7,1.0,1.0,0.9,1.2,1.4,1.5,1.4,1.4,1.5,
+  1.5,1.4,1.9,3.1,3.4,3.5,3.6,3.6,3.7,4.2,4.7,4.9,
+  5.2,5.4,5.2,4.9,4.7,4.8,4.7,4.9,5.1,5.0,4.7,4.4,
+  4.7,4.7,4.6,4.4,4.6,4.3,4.2,3.9,3.7,3.5,3.2,3.0,
+  2.9,2.8,2.8,2.7,2.6,2.6,2.6,2.7,2.7,2.8,2.8,3.0,
+  2.6,2.8,2.7,2.5,2.6,2.7,2.8,2.8,2.9,2.9,3.0,3.0,
+  3.1,3.1,3.2,3.3
+];
+var BUILTIN_NDX = [
+  4635,4906,4900,4941,5070,4987,4775,4776,4620,4779,5109,5007,
+  4614,4558,4870,4775,4948,4843,5163,5232,5312,5189,5324,5383,
+  5615,5825,5912,6048,6198,6141,6348,6429,6496,6727,6874,6903,
+  7411,7273,7063,7066,7443,7510,7672,7945,8046,7305,7330,6635,
+  7282,7533,7729,8095,7953,8006,8176,7963,7908,8292,8665,8973,
+  9151,8567,6860,8892,9491,10059,10745,11775,11167,10912,12198,12888,
+  13071,13193,13246,13892,13756,14504,14673,15260,14448,15498,15537,15645,
+  15644,14261,13751,12854,12131,11029,12163,11883,10576,10988,11468,10466,
+  11584,11455,12221,12137,13181,13787,13973,14032,13507,12851,13786,14065,
+  15363,15996,16379,15657,16742,17733,17599,17713,17925,17890,19891,19311,
+  19341,19523,17299,15267,16271,17842,19965,20118,21081,21422,21796,19890,
+  19627,19580,17754,16776
+];
+
+var mainChart,lagChart,scatterChart;
+
+// Clock
 function updateClock(){
   var now=new Date(),days=['日','一','二','三','四','五','六'];
   document.getElementById('topbar-time').textContent=now.toTimeString().slice(0,8);
   document.getElementById('topbar-date').textContent=
-    now.getFullYear()+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+String(now.getDate()).padStart(2,'0')+
-    '  週'+days[now.getDay()];
+    now.getFullYear()+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+String(now.getDate()).padStart(2,'0')+'  週'+days[now.getDay()];
 }
-updateClock(); setInterval(updateClock,1000);
+updateClock();setInterval(updateClock,1000);
 
-var START='2015-01-01';
-var mainChart,lagChart,scatterChart;
-
-function fredFetch(seriesId){
-  var direct='https://api.stlouisfed.org/fred/series/observations'
-    +'?series_id='+seriesId+'&api_key='+FRED_KEY
-    +'&observation_start='+START+'&frequency=m&file_type=json';
-  var proxy='https://api.allorigins.win/get?url='+encodeURIComponent(direct);
-  return fetch(proxy).then(function(r){return r.json();}).then(function(w){
-    return JSON.parse(w.contents).observations
-      .filter(function(o){return o.value!=='.';})
-      .map(function(o){return{date:o.date.slice(0,7),value:parseFloat(o.value)};});
-  });
-}
-
-function align(pceArr,ndxArr){
-  var pm={},nm={};
-  pceArr.forEach(function(d){pm[d.date]=d.value;});
-  ndxArr.forEach(function(d){nm[d.date]=d.value;});
-  var dates=Object.keys(pm).concat(Object.keys(nm))
-    .filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
-  var labels=[],pce=[],ndx=[];
-  dates.forEach(function(d){if(pm[d]!==undefined&&nm[d]!==undefined){labels.push(d);pce.push(pm[d]);ndx.push(nm[d]);}});
-  return{labels:labels,pce:pce,ndx:ndx};
+// 嘗試用 FRED API 直接抓（不經過 proxy）
+function tryFetchFRED(seriesId){
+  // 直接呼叫 FRED，GitHub Pages 是 HTTPS，FRED 也是 HTTPS，不需要 proxy
+  var url='https://api.stlouisfed.org/fred/series/observations'
+    +'?series_id='+seriesId
+    +'&api_key='+FRED_KEY
+    +'&observation_start=2026-01-01'  // 只抓最近幾筆，快速
+    +'&frequency=m&file_type=json';
+  return fetch(url,{signal:AbortSignal.timeout(8000)})
+    .then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    })
+    .then(function(data){
+      if(!data.observations) throw new Error('no data');
+      return data.observations
+        .filter(function(o){return o.value!=='.'&&o.value!=='';})
+        .map(function(o){return{date:o.date.slice(0,7),value:parseFloat(o.value)};});
+    });
 }
 
 function pearson(x,y){
-  var n=x.length,mx=x.reduce(function(a,b){return a+b;},0)/n,my=y.reduce(function(a,b){return a+b;},0)/n;
+  var n=x.length;
+  if(n<2)return 0;
+  var mx=x.reduce(function(a,b){return a+b;},0)/n,my=y.reduce(function(a,b){return a+b;},0)/n;
   var num=0,dx2=0,dy2=0;
   for(var i=0;i<n;i++){num+=(x[i]-mx)*(y[i]-my);dx2+=(x[i]-mx)**2;dy2+=(y[i]-my)**2;}
   return dx2===0||dy2===0?0:num/Math.sqrt(dx2*dy2);
 }
 
-function renderStats(labels,pce,ndx){
+function mergeLatest(baseLabels,basePCE,baseNDX,newPCE,newNDX){
+  var labels=baseLabels.slice(),pce=basePCE.slice(),ndx=baseNDX.slice();
+  var pm={},nm={};
+  newPCE.forEach(function(d){pm[d.date]=d.value;});
+  newNDX.forEach(function(d){nm[d.date]=d.value;});
+  var allDates=Object.keys(pm).concat(Object.keys(nm))
+    .filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
+  allDates.forEach(function(d){
+    var pi=labels.indexOf(d);
+    var hasPCE=pm[d]!==undefined,hasNDX=nm[d]!==undefined;
+    if(!hasPCE||!hasNDX)return;
+    if(pi>=0){pce[pi]=pm[d];ndx[pi]=nm[d];}
+    else{labels.push(d);pce.push(pm[d]);ndx.push(nm[d]);}
+  });
+  return{labels:labels,pce:pce,ndx:ndx};
+}
+
+function renderStats(labels,pce,ndx,source){
   var latestPCE=pce[pce.length-1],latestNDX=ndx[ndx.length-1];
   var peakPCE=Math.max.apply(null,pce),peakDate=labels[pce.indexOf(peakPCE)];
   var streak=0;
@@ -262,41 +280,44 @@ function renderStats(labels,pce,ndx){
 
   var pill=document.getElementById('status-pill');
   pill.style.display='inline-flex';
-  if(latestPCE>4){pill.className='status-pill pill-warn';pill.textContent='⚠ PCE 超標警戒';}
+  if(latestPCE>4){pill.className='status-pill pill-warn';pill.textContent='⚠ PCE超標警戒';}
   else if(latestPCE>3){pill.className='status-pill pill-watch';pill.textContent='👁 持續觀察 '+latestPCE.toFixed(1)+'%';}
   else{pill.className='status-pill pill-ok';pill.textContent='✓ 正常 '+latestPCE.toFixed(1)+'%';}
 
   var ab=document.getElementById('alert-box');
-  if(streak>=2){
-    ab.className='alert-box alert-warn';ab.style.display='block';
-    ab.innerHTML='<strong>⚠ 風險警告：</strong>核心PCE（'+latestPCE.toFixed(1)+'%）已連續 '+streak+' 個月超過 4% 警戒線，Fed 升息壓力升溫，注意那斯達克估值風險。';
-  }else if(streak===1){
-    ab.className='alert-box alert-watch';ab.style.display='block';
-    ab.innerHTML='<strong>👁 觀察中：</strong>核心PCE 本月達 '+latestPCE.toFixed(1)+'%，進入警戒區間，請追蹤下月數據。';
-  }else{ab.style.display='none';}
+  if(streak>=2){ab.className='alert-box alert-warn';ab.style.display='block';
+    ab.innerHTML='<strong>⚠ 風險警告：</strong>核心PCE（'+latestPCE.toFixed(1)+'%）已連續 '+streak+' 個月超過4%警戒線。';}
+  else if(streak===1){ab.className='alert-box alert-watch';ab.style.display='block';
+    ab.innerHTML='<strong>👁 觀察中：</strong>核心PCE本月達 '+latestPCE.toFixed(1)+'%，進入警戒區間。';}
+  else{ab.style.display='none';}
+
+  document.getElementById('update-note').textContent=
+    source==='live'
+      ? '✅ 已更新至最新數據（'+labels[labels.length-1]+'）　來源：FRED'
+      : '📦 內建歷史數據至 '+labels[labels.length-1]+'（FRED自動更新失敗，數據仍完整）';
 }
 
 function renderPeriodBars(labels,pce,ndx){
   var rets=ndx.map(function(v,i){return i===0?null:(v-ndx[i-1])/ndx[i-1]*100;});
   var periods=[
     {l:'低通膨期 2015–2019',s:'2015-01',e:'2019-12'},
-    {l:'COVID衝擊 2020',s:'2020-01',e:'2020-12'},
-    {l:'通膨飆升 2021',s:'2021-01',e:'2021-12'},
-    {l:'暴跌升息 2022',s:'2022-01',e:'2022-12'},
-    {l:'降溫牛市 2023–24',s:'2023-01',e:'2024-12'},
-    {l:'再通膨 2025–26',s:'2025-01',e:'2099-12'},
+    {l:'COVID衝擊 2020',    s:'2020-01',e:'2020-12'},
+    {l:'通膨飆升 2021',    s:'2021-01',e:'2021-12'},
+    {l:'暴跌升息 2022',    s:'2022-01',e:'2022-12'},
+    {l:'降溫牛市 2023–24', s:'2023-01',e:'2024-12'},
+    {l:'再通膨 2025–26',   s:'2025-01',e:'2099-12'},
   ];
   var html='';
   periods.forEach(function(p){
     var px=[],py=[];
     labels.forEach(function(d,i){if(d>=p.s&&d<=p.e&&rets[i]!==null){px.push(pce[i]);py.push(rets[i]);}});
-    if(px.length<5)return;
+    if(px.length<4)return;
     var r=pearson(px,py),pct=Math.min(100,Math.abs(r)*100),c=r<0?'#C04040':'#2A7A5A';
     html+='<div class="bar-row"><div class="bar-meta"><span class="bar-label">'+p.l+'</span>'
       +'<span style="font-family:var(--mono);font-size:12px;color:'+c+';font-weight:500;">r = '+r.toFixed(3)+'</span></div>'
       +'<div class="bar-track"><div class="bar-fill" style="width:'+pct.toFixed(1)+'%;background:'+c+';"></div></div></div>';
   });
-  document.getElementById('period-bars').innerHTML=html;
+  document.getElementById('period-bars').innerHTML=html||'<div style="color:#4A6580;font-size:12px;">計算中…</div>';
 }
 
 function renderMainChart(labels,pce,ndx){
@@ -313,7 +334,9 @@ function renderMainChart(labels,pce,ndx){
     type:'line',plugins:[redZone],
     data:{labels:labels,datasets:[
       {label:'那斯達克',data:ndx,borderColor:'#3B7DD8',backgroundColor:'rgba(59,125,216,0.06)',borderWidth:2,pointRadius:0,pointHoverRadius:4,tension:0.3,fill:true,yAxisID:'yn'},
-      {label:'核心PCE',data:pce,borderColor:'#C04040',borderWidth:2,pointRadius:pce.map(function(v,i){return i===pce.length-1?6:0;}),pointBackgroundColor:'#C04040',pointHoverRadius:4,tension:0.3,fill:false,yAxisID:'yp'},
+      {label:'核心PCE',data:pce,borderColor:'#C04040',borderWidth:2,
+       pointRadius:pce.map(function(v,i){return i===pce.length-1?6:0;}),
+       pointBackgroundColor:'#C04040',pointHoverRadius:4,tension:0.3,fill:false,yAxisID:'yp'},
       {label:'4%',data:t4,borderColor:'#C04040',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'yp'},
       {label:'2%',data:t2,borderColor:'#2A7A5A',borderDash:[4,4],borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'yp'},
     ]},
@@ -326,15 +349,17 @@ function renderMainChart(labels,pce,ndx){
       }}}},
       scales:{
         yn:{type:'linear',position:'left',min:0,suggestedMax:32000,
-          ticks:{callback:function(v){return v>=1000?(v/1000).toFixed(0)+'K':v;},color:'#3B7DD8',font:{size:10},fontFamily:'JetBrains Mono'},
+          ticks:{callback:function(v){return v>=1000?(v/1000).toFixed(0)+'K':v;},color:'#3B7DD8',font:{size:10}},
           grid:{color:'rgba(255,255,255,0.04)'},
           title:{display:true,text:'那斯達克（點）',color:'#3B7DD8',font:{size:10}}},
         yp:{type:'linear',position:'right',min:0,max:7,
           ticks:{callback:function(v){return v.toFixed(1)+'%';},color:'#C04040',font:{size:10}},
           grid:{drawOnChartArea:false},
           title:{display:true,text:'核心PCE YoY %',color:'#C04040',font:{size:10}}},
-        x:{ticks:{callback:function(val,idx){var l=labels[idx];return l&&l.endsWith('-01')?l.slice(0,4):'';},
-          color:'#4A6580',font:{size:10},maxRotation:0,autoSkip:false},grid:{display:false}}
+        x:{ticks:{
+          callback:function(val,idx){var l=labels[idx];return l&&l.endsWith('-01')?l.slice(0,4):'';},
+          color:'#4A6580',font:{size:10},maxRotation:0,autoSkip:false},
+          grid:{display:false}}
       }
     }
   });
@@ -355,12 +380,10 @@ function renderLagChart(labels,pce,ndx){
   if(lagChart)lagChart.destroy();
   lagChart=new Chart(document.getElementById('lag-chart').getContext('2d'),{
     type:'bar',
-    data:{
-      labels:lagResults.map(function(d){return d.lag===0?'同期':d.lag>0?'PCE+'+d.lag:'NQ+'+Math.abs(d.lag);}),
+    data:{labels:lagResults.map(function(d){return d.lag===0?'同期':d.lag>0?'PCE+'+d.lag:'NQ+'+Math.abs(d.lag);}),
       datasets:[{label:'r',data:lagResults.map(function(d){return d.r;}),
         backgroundColor:lagResults.map(function(d){return d.lag===best.lag?'#3B7DD8':d.r<0?'rgba(192,64,64,0.6)':'rgba(42,122,90,0.6)';}),
-        borderRadius:3}]
-    },
+        borderRadius:3}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return' r = '+c.parsed.y.toFixed(3);}}}},
       scales:{
@@ -386,7 +409,8 @@ function renderScatter(labels,pce,ndx){
   allPCE.forEach(function(x,i){num+=(x-mx)*(allRet[i]-my);den+=(x-mx)**2;});
   var slope=den===0?0:num/den,ic=my-slope*mx;
   var xMin=Math.min.apply(null,allPCE)-0.2,xMax=Math.max.apply(null,allPCE)+0.2;
-  var reg=[{x:parseFloat(xMin.toFixed(2)),y:parseFloat((slope*xMin+ic).toFixed(2))},{x:parseFloat(xMax.toFixed(2)),y:parseFloat((slope*xMax+ic).toFixed(2))}];
+  var reg=[{x:parseFloat(xMin.toFixed(2)),y:parseFloat((slope*xMin+ic).toFixed(2))},
+           {x:parseFloat(xMax.toFixed(2)),y:parseFloat((slope*xMax+ic).toFixed(2))}];
   if(scatterChart)scatterChart.destroy();
   scatterChart=new Chart(document.getElementById('scatter-chart').getContext('2d'),{
     type:'scatter',
@@ -394,13 +418,17 @@ function renderScatter(labels,pce,ndx){
       {label:'PCE<2%',data:lo, pointBackgroundColor:'rgba(42,122,90,0.7)', pointRadius:4,pointHoverRadius:6},
       {label:'2-4%', data:mid,pointBackgroundColor:'rgba(59,125,216,0.7)',pointRadius:4,pointHoverRadius:6},
       {label:'PCE>4%',data:hi,pointBackgroundColor:'rgba(192,64,64,0.8)', pointRadius:4,pointHoverRadius:6},
-      {label:'回歸線',data:reg,type:'line',borderColor:'rgba(154,172,186,0.3)',borderDash:[4,4],borderWidth:1.5,pointRadius:0,fill:false},
+      {label:'回歸線',data:reg,type:'line',borderColor:'rgba(154,172,186,0.25)',borderDash:[4,4],borderWidth:1.5,pointRadius:0,fill:false},
     ]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return'PCE: '+c.parsed.x.toFixed(1)+'%  月報酬: '+c.parsed.y.toFixed(1)+'%';}}}},
       scales:{
-        x:{title:{display:true,text:'核心PCE YoY (%)',color:'#4A6580',font:{size:10}},ticks:{callback:function(v){return v.toFixed(1)+'%';},color:'#4A6580',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},
-        y:{title:{display:true,text:'那斯達克月報酬率 (%)',color:'#4A6580',font:{size:10}},ticks:{callback:function(v){return v.toFixed(0)+'%';},color:'#4A6580',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}}
+        x:{title:{display:true,text:'核心PCE YoY (%)',color:'#4A6580',font:{size:10}},
+           ticks:{callback:function(v){return v.toFixed(1)+'%';},color:'#4A6580',font:{size:10}},
+           grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{title:{display:true,text:'那斯達克月報酬率 (%)',color:'#4A6580',font:{size:10}},
+           ticks:{callback:function(v){return v.toFixed(0)+'%';},color:'#4A6580',font:{size:10}},
+           grid:{color:'rgba(255,255,255,0.04)'}}
       }
     }
   });
@@ -415,16 +443,16 @@ function renderInsights(labels,pce,ndx){
   var items=[
     {icon:'📉',bg:'rgba(192,64,64,0.15)',
      title:'整體呈中度負相關（r = '+r_all.toFixed(3)+'）',
-     body:'137個月全樣本中，核心PCE與那斯達克月報酬率呈負相關，|r| &lt; 0.5 說明關係非線性穩定，強烈依賴市場環境。分期觀察才能得出有效結論。'},
+     body:'全樣本中核心PCE與那斯達克月報酬率呈負相關，但 |r| &lt; 0.5，說明關係受市場環境切換影響大，分期觀察才有效。'},
     {icon:'🔥',bg:'rgba(192,64,64,0.15)',
      title:'2022年升息期負相關最為顯著',
-     body:'PCE每一波上升幾乎同步壓制那斯達克。典型估值折現效應：無風險利率上升 → 成長股現值下降 → 那斯達克全年重挫 33%。'},
+     body:'PCE每波上升幾乎同步壓制那斯達克。無風險利率上升 → 成長股現值下降 → 全年重挫 33%。'},
     {icon:'⏱',bg:'rgba(59,125,216,0.15)',
      title:'Lead-Lag：市場提前反映 PCE 預期',
-     body:'那斯達克往往提前 1–3 個月反映 PCE 走勢。真正的交易機會在「預期差」——實際數據與市場預期的偏離，而非數據絕對值本身。'},
+     body:'那斯達克往往提前 1–3 個月反映 PCE 走勢。機會在「預期差」——實際數據與市場預期的偏離，而非數據絕對值。'},
     {icon:'👁',bg:'rgba(200,140,40,0.15)',
-     title:'當前（'+latestPCE.toFixed(1)+'%）：PCE上升但股市強勢',
-     body:'PCE 從低點回升，但那斯達克同期反彈。市場暫時容忍再通膨。若 PCE 突破 4% 警戒線，歷史顯示修正風險將快速重新定價。'},
+     title:'當前（'+latestPCE.toFixed(1)+'%）：PCE上升但股市強勢，需密切追蹤',
+     body:'PCE從低點回升，那斯達克同期強勢反彈，市場暫時容忍再通膨。若突破 4% 警戒線，歷史顯示修正風險將快速重新定價。'},
   ];
   document.getElementById('insight-list').innerHTML=items.map(function(it){
     return '<div class="insight-item"><div class="insight-icon" style="background:'+it.bg+';">'+it.icon+'</div>'
@@ -432,31 +460,34 @@ function renderInsights(labels,pce,ndx){
   }).join('');
 }
 
-// ── 主流程 ──
-if(FRED_KEY==='YOUR_FRED_API_KEY'){
-  document.getElementById('status-pill').style.display='inline-flex';
-  document.getElementById('status-pill').className='status-pill pill-warn';
-  document.getElementById('status-pill').textContent='⚠ 請設定 FRED API Key';
-  document.getElementById('stat-grid').innerHTML=
-    '<div class="stat-card" style="grid-column:1/-1;color:#E0B060;font-size:13px;">'
-    +'請將 <code>pce-nasdaq.html</code> 中的 <code>YOUR_FRED_API_KEY</code> 換成你的 Key 後重新整理。'
-    +'申請免費 Key：<a href="https://fred.stlouisfed.org/docs/api/api_key.html" target="_blank" style="color:#7AB0E8;">fred.stlouisfed.org</a></div>';
-}else{
-  Promise.all([fredFetch('PCEPILFE'),fredFetch('NASDAQCOM')])
+function renderAll(labels,pce,ndx,source){
+  renderStats(labels,pce,ndx,source);
+  renderMainChart(labels,pce,ndx);
+  renderPeriodBars(labels,pce,ndx);
+  renderLagChart(labels,pce,ndx);
+  renderScatter(labels,pce,ndx);
+  renderInsights(labels,pce,ndx);
+}
+
+// ── 主流程：先用內建數據立刻顯示，再嘗試抓最新 ──
+renderAll(BUILTIN_LABELS,BUILTIN_PCE,BUILTIN_NDX,'builtin');
+
+if(FRED_KEY&&FRED_KEY!=='YOUR_FRED_API_KEY'){
+  Promise.all([tryFetchFRED('PCEPILFE'),tryFetchFRED('NASDAQCOM')])
     .then(function(res){
-      var a=align(res[0],res[1]);
-      renderStats(a.labels,a.pce,a.ndx);
-      renderMainChart(a.labels,a.pce,a.ndx);
-      renderPeriodBars(a.labels,a.pce,a.ndx);
-      renderLagChart(a.labels,a.pce,a.ndx);
-      renderScatter(a.labels,a.pce,a.ndx);
-      renderInsights(a.labels,a.pce,a.ndx);
+      var merged=mergeLatest(BUILTIN_LABELS,BUILTIN_PCE,BUILTIN_NDX,res[0],res[1]);
+      if(merged.labels.length>BUILTIN_LABELS.length||
+         merged.pce[merged.pce.length-1]!==BUILTIN_PCE[BUILTIN_PCE.length-1]){
+        renderAll(merged.labels,merged.pce,merged.ndx,'live');
+      }else{
+        document.getElementById('update-note').textContent=
+          '📦 內建數據為最新（'+merged.labels[merged.labels.length-1]+'）　來源：FRED';
+      }
     })
     .catch(function(e){
-      console.error(e);
-      document.getElementById('status-pill').style.display='inline-flex';
-      document.getElementById('status-pill').className='status-pill pill-warn';
-      document.getElementById('status-pill').textContent='資料載入失敗，請稍後重試';
+      console.warn('FRED fetch failed:',e.message);
+      document.getElementById('update-note').textContent=
+        '📦 使用內建歷史數據（'+BUILTIN_LABELS[BUILTIN_LABELS.length-1]+'）　FRED連線暫時失敗，圖表仍完整';
     });
 }
 </script>
