@@ -1,0 +1,42 @@
+name: Update dashboard data
+
+# 每月自動從 FRED 抓最新數據並寫回 pce-nasdaq.html
+on:
+  schedule:
+    # 每月 1 號與 5 號 13:00 UTC 各跑一次
+    # （PCE 通常隔月底公布，跑兩次確保抓到最新）
+    - cron: '0 13 1 * *'
+    - cron: '0 13 5 * *'
+  workflow_dispatch:   # 也可在 Actions 頁面手動觸發
+
+permissions:
+  contents: write       # 允許 workflow commit 回 repo
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run update script
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python update_data.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet pce-nasdaq.html; then
+            echo "資料無變化，略過 commit"
+          else
+            git add pce-nasdaq.html
+            git commit -m "chore: 自動更新 PCE / Nasdaq / HY OAS 數據"
+            git push
+          fi

@@ -84,7 +84,7 @@
     <div>
       <div style="font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:#4A6580;margin-bottom:6px;">Market Monitor</div>
       <div style="font-size:20px;font-weight:300;letter-spacing:0.08em;color:#CDD8E8;">那斯達克 × 核心PCE 趨勢</div>
-      <div class="update-note" id="update-note">歷史數據：內建至 2026-04　最新數據：嘗試自動更新中…</div>
+      <div class="update-note" id="update-note">載入中…</div>
     </div>
     <span class="status-pill" id="status-pill" style="display:none;"></span>
   </div>
@@ -141,22 +141,33 @@
   </div>
 
   <div class="card" style="margin-top:16px;">
+    <div class="card-header">
+      <span class="card-title">高收益債利差 HY OAS（信用風險溫度計）</span>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-line" style="background:#C88828;"></div>HY OAS</div>
+        <div class="leg-item"><div style="width:20px;height:0;border-top:2px dashed #E0B060;flex-shrink:0;"></div>5%觀察線</div>
+        <div class="leg-item"><div style="width:20px;height:0;border-top:2px dashed #C04040;flex-shrink:0;"></div>7%壓力線</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#4A6580;margin-bottom:10px;">利差走闊代表市場要求更高風險補償，常領先股市修正。原文5大風險條件之一。</div>
+    <div style="position:relative;width:100%;height:200px;"><canvas id="hy-chart"></canvas></div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
     <div class="card-title" style="margin-bottom:14px;">專業解讀</div>
     <div id="insight-list"></div>
   </div>
 
-  <footer>資料來源：<a href="https://fred.stlouisfed.org" target="_blank">FRED（BEA / Nasdaq Inc.）</a>　歷史數據內建，最新數據每次開啟自動嘗試更新</footer>
+  <footer>資料來源：<a href="https://fred.stlouisfed.org" target="_blank">FRED（BEA / Nasdaq Inc. / ICE BofA）</a>　每月透過 GitHub Actions 自動更新</footer>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 // ═══════════════════════════════════════
-// FRED API Key（選填）— 有填則嘗試抓最新數據
-// 沒填或抓失敗也會顯示完整內建歷史數據
+// 資料由 GitHub Actions 每月自動從 FRED 更新並寫入下方陣列
+// 前端不再呼叫 FRED API（無需 key、無需 proxy）
 // ═══════════════════════════════════════
-var FRED_KEY = '072b90d2b50fb20dc9785f305aa0f0f0';
-// ═══════════════════════════════════════
-
+var BUILTIN_LAST = '2026-04';
 // ── 內建歷史數據（2015-01 ~ 2026-04）──
 var BUILTIN_LABELS = [
   '2015-01','2015-02','2015-03','2015-04','2015-05','2015-06','2015-07','2015-08','2015-09','2015-10','2015-11','2015-12',
@@ -200,8 +211,22 @@ var BUILTIN_NDX = [
   19341,19523,17299,15267,16271,17842,19965,20118,21081,21422,21796,19890,
   19627,19580,17754,16776
 ];
+var BUILTIN_HY = [
+  4.81,4.32,4.43,4.31,4.50,5.10,5.36,5.85,6.34,6.16,6.31,7.15,
+  7.93,8.32,7.16,6.51,6.00,5.92,5.59,5.20,4.96,4.88,4.62,4.20,
+  3.95,3.91,3.92,3.85,3.75,3.71,3.61,3.59,3.45,3.49,3.49,3.43,
+  3.40,3.43,3.74,3.78,3.83,3.78,3.74,3.62,3.71,4.18,4.45,5.27,
+  4.40,4.21,3.91,4.01,4.07,4.16,3.93,3.83,3.86,3.88,3.93,3.49,
+  3.50,3.79,8.34,8.41,6.85,6.45,5.43,5.18,5.21,5.45,5.13,4.20,
+  3.87,3.61,3.42,3.18,3.13,3.19,3.49,3.27,3.18,3.21,3.21,3.10,
+  3.34,3.72,3.78,3.91,4.31,5.48,5.27,4.95,5.36,5.24,4.59,4.81,
+  4.34,4.46,4.71,4.62,4.45,4.04,3.99,3.91,3.94,4.39,4.04,3.43,
+  3.39,3.15,3.13,3.09,3.16,3.21,3.26,3.27,3.05,2.89,2.78,2.91,
+  2.62,2.78,3.20,3.61,3.18,2.95,2.88,2.92,2.85,2.79,2.88,2.95,
+  3.02,3.18,3.45,3.38
+];
 
-var mainChart,lagChart,scatterChart;
+var mainChart,lagChart,scatterChart,hyChart;
 
 // Clock
 function updateClock(){
@@ -212,26 +237,6 @@ function updateClock(){
 }
 updateClock();setInterval(updateClock,1000);
 
-// 嘗試用 FRED API 直接抓（不經過 proxy）
-function tryFetchFRED(seriesId){
-  // 直接呼叫 FRED，GitHub Pages 是 HTTPS，FRED 也是 HTTPS，不需要 proxy
-  var url='https://api.stlouisfed.org/fred/series/observations'
-    +'?series_id='+seriesId
-    +'&api_key='+FRED_KEY
-    +'&observation_start=2026-01-01'  // 只抓最近幾筆，快速
-    +'&frequency=m&file_type=json';
-  return fetch(url,{signal:AbortSignal.timeout(8000)})
-    .then(function(r){
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      return r.json();
-    })
-    .then(function(data){
-      if(!data.observations) throw new Error('no data');
-      return data.observations
-        .filter(function(o){return o.value!=='.'&&o.value!=='';})
-        .map(function(o){return{date:o.date.slice(0,7),value:parseFloat(o.value)};});
-    });
-}
 
 function pearson(x,y){
   var n=x.length;
@@ -242,33 +247,22 @@ function pearson(x,y){
   return dx2===0||dy2===0?0:num/Math.sqrt(dx2*dy2);
 }
 
-function mergeLatest(baseLabels,basePCE,baseNDX,newPCE,newNDX){
-  var labels=baseLabels.slice(),pce=basePCE.slice(),ndx=baseNDX.slice();
-  var pm={},nm={};
-  newPCE.forEach(function(d){pm[d.date]=d.value;});
-  newNDX.forEach(function(d){nm[d.date]=d.value;});
-  var allDates=Object.keys(pm).concat(Object.keys(nm))
-    .filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
-  allDates.forEach(function(d){
-    var pi=labels.indexOf(d);
-    var hasPCE=pm[d]!==undefined,hasNDX=nm[d]!==undefined;
-    if(!hasPCE||!hasNDX)return;
-    if(pi>=0){pce[pi]=pm[d];ndx[pi]=nm[d];}
-    else{labels.push(d);pce.push(pm[d]);ndx.push(nm[d]);}
-  });
-  return{labels:labels,pce:pce,ndx:ndx};
-}
 
-function renderStats(labels,pce,ndx,source){
+function renderStats(labels,pce,ndx,hy){
   var latestPCE=pce[pce.length-1],latestNDX=ndx[ndx.length-1];
   var peakPCE=Math.max.apply(null,pce),peakDate=labels[pce.indexOf(peakPCE)];
   var streak=0;
   for(var i=pce.length-1;i>=0;i--){if(pce[i]>4)streak++;else break;}
   var pceColor=latestPCE>4?'#E08080':latestPCE>3?'#E0B060':'#60C090';
+  var latestHY=hy[hy.length-1];
+  // HY OAS 風險分級：>5 風險升高，>7 顯著壓力（歷史經驗值）
+  var hyColor=latestHY>7?'#E08080':latestHY>5?'#E0B060':'#60C090';
+  var hyState=latestHY>7?'信用壓力':latestHY>5?'利差走闊':'信用穩定';
 
   document.getElementById('stat-grid').innerHTML=[
     {l:'核心PCE（最新）',v:latestPCE.toFixed(2)+'%',s:labels[labels.length-1],c:pceColor},
     {l:'那斯達克（最新）',v:Math.round(latestNDX).toLocaleString(),s:'月均點位',c:'#7AB0E8'},
+    {l:'高收益債利差',v:latestHY.toFixed(2)+'%',s:'HY OAS · '+hyState,c:hyColor},
     {l:'PCE 歷史高峰',v:peakPCE.toFixed(1)+'%',s:peakDate,c:'#E08080'},
     {l:'連續超標月數',v:streak+'月',s:streak>=2?'⚠ 警戒':streak===1?'持續觀察':'正常區間',
      c:streak>=2?'#E08080':streak===1?'#E0B060':'#60C090'},
@@ -291,10 +285,6 @@ function renderStats(labels,pce,ndx,source){
     ab.innerHTML='<strong>👁 觀察中：</strong>核心PCE本月達 '+latestPCE.toFixed(1)+'%，進入警戒區間。';}
   else{ab.style.display='none';}
 
-  document.getElementById('update-note').textContent=
-    source==='live'
-      ? '✅ 已更新至最新數據（'+labels[labels.length-1]+'）　來源：FRED'
-      : '📦 內建歷史數據至 '+labels[labels.length-1]+'（FRED自動更新失敗，數據仍完整）';
 }
 
 function renderPeriodBars(labels,pce,ndx){
@@ -434,12 +424,45 @@ function renderScatter(labels,pce,ndx){
   });
 }
 
-function renderInsights(labels,pce,ndx){
+function renderHYChart(labels,hy){
+  if(hyChart)hyChart.destroy();
+  var t5=labels.map(function(){return 5;}),t7=labels.map(function(){return 7;});
+  hyChart=new Chart(document.getElementById('hy-chart').getContext('2d'),{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:'HY OAS',data:hy,borderColor:'#C88828',backgroundColor:'rgba(200,136,40,0.08)',borderWidth:2,
+       pointRadius:hy.map(function(v,i){return i===hy.length-1?6:0;}),
+       pointBackgroundColor:'#C88828',pointHoverRadius:4,tension:0.3,fill:true},
+      {label:'5%',data:t5,borderColor:'#E0B060',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false},
+      {label:'7%',data:t7,borderColor:'#C04040',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){
+        if(c.datasetIndex===0)return' HY OAS: '+c.parsed.y.toFixed(2)+'%';return'';
+      }}}},
+      scales:{
+        y:{min:0,suggestedMax:10,ticks:{callback:function(v){return v.toFixed(0)+'%';},color:'#C88828',font:{size:10}},
+          grid:{color:'rgba(255,255,255,0.04)'}},
+        x:{ticks:{callback:function(val,idx){var l=labels[idx];return l&&l.endsWith('-01')?l.slice(0,4):'';},
+          color:'#4A6580',font:{size:10},maxRotation:0,autoSkip:false},grid:{display:false}}
+      }
+    }
+  });
+}
+
+function renderInsights(labels,pce,ndx,hy){
   var rets=ndx.map(function(v,i){return i===0?null:(v-ndx[i-1])/ndx[i-1]*100;});
   var allPCE=[],allRet=[];
   labels.forEach(function(d,i){if(rets[i]!==null){allPCE.push(pce[i]);allRet.push(rets[i]);}});
   var r_all=pearson(allPCE,allRet);
   var latestPCE=pce[pce.length-1];
+  var latestHY=hy[hy.length-1];
+  var hyMsg=latestHY>7
+    ?'利差已突破7%壓力線，信用市場明顯緊張，與股市修正高度相關，屬高警戒訊號。'
+    :latestHY>5
+    ?'利差走闊至5%以上，市場開始要求更高風險補償，需留意是否進一步惡化。'
+    :'利差處於低檔，信用市場穩定，尚未對股市構成壓力。此指標一旦快速跳升，往往領先股市修正。';
   var items=[
     {icon:'📉',bg:'rgba(192,64,64,0.15)',
      title:'整體呈中度負相關（r = '+r_all.toFixed(3)+'）',
@@ -453,6 +476,9 @@ function renderInsights(labels,pce,ndx){
     {icon:'👁',bg:'rgba(200,140,40,0.15)',
      title:'當前（'+latestPCE.toFixed(1)+'%）：PCE上升但股市強勢，需密切追蹤',
      body:'PCE從低點回升，那斯達克同期強勢反彈，市場暫時容忍再通膨。若突破 4% 警戒線，歷史顯示修正風險將快速重新定價。'},
+    {icon:'💳',bg:'rgba(200,136,40,0.15)',
+     title:'信用利差（HY OAS '+latestHY.toFixed(2)+'%）：第二道風險閘門',
+     body:hyMsg},
   ];
   document.getElementById('insight-list').innerHTML=items.map(function(it){
     return '<div class="insight-item"><div class="insight-icon" style="background:'+it.bg+';">'+it.icon+'</div>'
@@ -460,36 +486,35 @@ function renderInsights(labels,pce,ndx){
   }).join('');
 }
 
-function renderAll(labels,pce,ndx,source){
-  renderStats(labels,pce,ndx,source);
+function renderAll(labels,pce,ndx,hy){
+  renderStats(labels,pce,ndx,hy);
   renderMainChart(labels,pce,ndx);
   renderPeriodBars(labels,pce,ndx);
   renderLagChart(labels,pce,ndx);
   renderScatter(labels,pce,ndx);
-  renderInsights(labels,pce,ndx);
+  renderHYChart(labels,hy);
+  renderInsights(labels,pce,ndx,hy);
 }
 
-// ── 主流程：先用內建數據立刻顯示，再嘗試抓最新 ──
-renderAll(BUILTIN_LABELS,BUILTIN_PCE,BUILTIN_NDX,'builtin');
+// ── 主流程：直接用內建數據渲染（資料由 GitHub Actions 每月更新）──
+renderAll(BUILTIN_LABELS,BUILTIN_PCE,BUILTIN_NDX,BUILTIN_HY);
 
-if(FRED_KEY&&FRED_KEY!=='YOUR_FRED_API_KEY'){
-  Promise.all([tryFetchFRED('PCEPILFE'),tryFetchFRED('NASDAQCOM')])
-    .then(function(res){
-      var merged=mergeLatest(BUILTIN_LABELS,BUILTIN_PCE,BUILTIN_NDX,res[0],res[1]);
-      if(merged.labels.length>BUILTIN_LABELS.length||
-         merged.pce[merged.pce.length-1]!==BUILTIN_PCE[BUILTIN_PCE.length-1]){
-        renderAll(merged.labels,merged.pce,merged.ndx,'live');
-      }else{
-        document.getElementById('update-note').textContent=
-          '📦 內建數據為最新（'+merged.labels[merged.labels.length-1]+'）　來源：FRED';
-      }
-    })
-    .catch(function(e){
-      console.warn('FRED fetch failed:',e.message);
-      document.getElementById('update-note').textContent=
-        '📦 使用內建歷史數據（'+BUILTIN_LABELS[BUILTIN_LABELS.length-1]+'）　FRED連線暫時失敗，圖表仍完整';
-    });
-}
+// 資料新鮮度檢查：若內建資料截止月份距今超過 2 個月，顯示提醒
+(function(){
+  var parts=BUILTIN_LAST.split('-');
+  var dataDate=new Date(parseInt(parts[0]),parseInt(parts[1])-1,1);
+  var now=new Date();
+  var months=(now.getFullYear()-dataDate.getFullYear())*12+(now.getMonth()-dataDate.getMonth());
+  var note=document.getElementById('update-note');
+  if(months>=3){
+    note.innerHTML='⚠ 資料已 '+months+' 個月未更新（截止 '+BUILTIN_LAST+'）。'
+      +'PCE/HY 通常隔月公布，請確認 GitHub Actions 自動更新是否正常。';
+    note.style.color='#E0B060';
+  }else{
+    note.textContent='📊 資料截止 '+BUILTIN_LAST+'　每月由 FRED 自動更新';
+    note.style.color='#4A6580';
+  }
+})();
 </script>
 </body>
 </html>
