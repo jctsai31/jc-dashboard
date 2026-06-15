@@ -154,6 +154,29 @@
   </div>
 
   <div class="card" style="margin-top:16px;">
+    <div class="card-header">
+      <span class="card-title">Fed 目標利率上限（升息壓力）</span>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-line" style="background:#6A8FC8;"></div>利率上限</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#4A6580;margin-bottom:10px;">原文第2條件：連續升息3次以上才是結構性傷害。階梯狀上升代表緊縮週期。</div>
+    <div style="position:relative;width:100%;height:200px;"><canvas id="fed-chart"></canvas></div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <div class="card-header">
+      <span class="card-title">實質工資年增率（購買力溫度計）</span>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-line" style="background:#5AA88A;"></div>實質工資YoY</div>
+        <div class="leg-item"><div style="width:20px;height:0;border-top:2px dashed #C04040;flex-shrink:0;"></div>0%榮枯線</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#4A6580;margin-bottom:10px;">原文第4條件：名目薪資年增 − 通膨年增。轉負代表薪水追不上物價、購買力縮水。</div>
+    <div style="position:relative;width:100%;height:200px;"><canvas id="wage-chart"></canvas></div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
     <div class="card-title" style="margin-bottom:14px;">專業解讀</div>
     <div id="insight-list"></div>
   </div>
@@ -189,8 +212,36 @@ var BUILTIN_HY = [
   3.16,3.37,3.26,2.93,2.7,2.76,2.72,2.71,3.17,4.03,3.35,3.13,
   2.89,2.9,2.79,2.92,3.08,2.89,2.74,2.92,3.19,2.93
 ];
+var BUILTIN_FED = [
+  0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.5,
+  0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.75,
+  0.75,0.75,1.0,1.0,1.0,1.25,1.25,1.25,1.25,1.25,1.25,1.5,
+  1.5,1.5,1.75,1.75,1.75,2.0,2.0,2.0,2.25,2.25,2.25,2.5,
+  2.5,2.5,2.5,2.5,2.5,2.5,2.5,2.25,2.0,1.75,1.75,1.75,
+  1.75,1.75,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,
+  0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,
+  0.25,0.25,0.5,0.5,1.0,1.75,2.5,2.5,3.25,3.25,4.0,4.5,
+  4.5,4.75,5.0,5.0,5.25,5.25,5.5,5.5,5.5,5.5,5.5,5.5,
+  5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.5,5.0,5.0,4.75,4.5,
+  4.5,4.5,4.5,4.5,4.5,4.5,4.5,4.5,4.5,4.5,4.5,4.5,
+  4.5,4.5,4.5,4.5
+];
+var BUILTIN_WAGE = [
+  2.2,2.0,2.1,2.0,2.1,2.1,2.1,1.8,1.9,1.7,1.8,1.8,
+  1.5,1.5,1.5,1.4,1.3,1.4,1.4,1.1,1.3,1.2,1.0,0.9,
+  0.9,0.7,0.6,0.6,0.8,0.6,0.7,0.6,0.5,0.6,0.4,0.4,
+  0.6,0.6,0.7,0.6,0.7,0.5,0.6,0.7,0.7,0.7,0.7,0.8,
+  1.3,1.3,1.3,1.3,1.3,1.5,1.5,1.5,1.3,1.5,1.4,1.5,
+  1.7,1.8,2.0,2.2,2.4,2.5,2.6,2.7,2.9,3.1,3.2,3.6,
+  0.6,0.2,0.1,-0.3,-0.4,-0.7,-1.0,-1.3,-1.4,-1.8,-1.9,-2.1,
+  -2.6,-2.5,-2.2,-2.2,-2.1,-2.0,-1.8,-1.5,-1.3,-1.3,-1.3,-1.0,
+  -0.7,-0.7,-0.4,-0.3,-0.4,-0.1,0.1,0.2,0.2,0.5,0.4,0.7,
+  1.0,1.2,1.2,1.0,1.1,1.1,1.3,1.4,1.2,1.4,1.4,1.3,
+  1.4,1.3,1.3,1.2,1.0,1.1,0.9,1.2,1.1,1.1,0.9,0.8,
+  0.9,0.9,0.5,0.6
+];
 
-var mainChart,lagChart,scatterChart,hyChart;
+var mainChart,lagChart,scatterChart,hyChart,fedChart,wageChart;
 
 // Clock
 function updateClock(){
@@ -212,7 +263,7 @@ function pearson(x,y){
 }
 
 
-function renderStats(labels,pce,ndx,hy){
+function renderStats(labels,pce,ndx,hy,fed,wage){
   var latestPCE=pce[pce.length-1],latestNDX=ndx[ndx.length-1];
   var peakPCE=Math.max.apply(null,pce),peakDate=labels[pce.indexOf(peakPCE)];
   var streak=0;
@@ -223,10 +274,27 @@ function renderStats(labels,pce,ndx,hy){
   var hyColor=latestHY>7?'#E08080':latestHY>5?'#E0B060':'#60C090';
   var hyState=latestHY>7?'信用壓力':latestHY>5?'利差走闊':'信用穩定';
 
+  var latestFed=fed[fed.length-1];
+  // 計算最近連續升息次數（與前一個不同的階段相比）
+  var fedHikes=0;
+  for(var fi=fed.length-1;fi>0;fi--){
+    if(fed[fi]>fed[fi-1])fedHikes++;
+    else if(fed[fi]<fed[fi-1])break;
+  }
+  // 風險：原文指「連升3次以上」=結構性傷害
+  var fedColor=fedHikes>=3?'#E08080':fedHikes>=1?'#E0B060':'#60C090';
+  var fedState=fedHikes>=3?'連升'+fedHikes+'次·警戒':fedHikes>=1?'升息'+fedHikes+'次':'未升息';
+
+  var latestWage=wage[wage.length-1];
+  // 實質工資轉負=購買力縮水，原文第4條件
+  var wageColor=latestWage<0?'#E08080':latestWage<0.5?'#E0B060':'#60C090';
+
   document.getElementById('stat-grid').innerHTML=[
     {l:'核心PCE（最新）',v:latestPCE.toFixed(2)+'%',s:labels[labels.length-1],c:pceColor},
     {l:'那斯達克（最新）',v:Math.round(latestNDX).toLocaleString(),s:'月均點位',c:'#7AB0E8'},
     {l:'高收益債利差',v:latestHY.toFixed(2)+'%',s:'HY OAS · '+hyState,c:hyColor},
+    {l:'Fed 目標利率',v:latestFed.toFixed(2)+'%',s:'上限 · '+fedState,c:fedColor},
+    {l:'實質工資年增',v:latestWage.toFixed(1)+'%',s:wage[wage.length-1]>=0?'購買力正成長':'⚠ 購買力縮水',c:wageColor},
     {l:'PCE 歷史高峰',v:peakPCE.toFixed(1)+'%',s:peakDate,c:'#E08080'},
     {l:'連續超標月數',v:streak+'月',s:streak>=2?'⚠ 警戒':streak===1?'持續觀察':'正常區間',
      c:streak>=2?'#E08080':streak===1?'#E0B060':'#60C090'},
@@ -415,7 +483,58 @@ function renderHYChart(labels,hy){
   });
 }
 
-function renderInsights(labels,pce,ndx,hy){
+function renderFedChart(labels,fed){
+  if(fedChart)fedChart.destroy();
+  fedChart=new Chart(document.getElementById('fed-chart').getContext('2d'),{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:'Fed上限',data:fed,borderColor:'#6A8FC8',backgroundColor:'rgba(106,143,200,0.10)',borderWidth:2,
+       stepped:true,
+       pointRadius:fed.map(function(v,i){return i===fed.length-1?6:0;}),
+       pointBackgroundColor:'#6A8FC8',pointHoverRadius:4,fill:true},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){
+        return' 利率上限: '+c.parsed.y.toFixed(2)+'%';}}}},
+      scales:{
+        y:{min:0,suggestedMax:6,ticks:{callback:function(v){return v.toFixed(1)+'%';},color:'#6A8FC8',font:{size:10}},
+          grid:{color:'rgba(255,255,255,0.04)'}},
+        x:{ticks:{callback:function(val,idx){var l=labels[idx];return l&&l.endsWith('-01')?l.slice(0,4):'';},
+          color:'#4A6580',font:{size:10},maxRotation:0,autoSkip:false},grid:{display:false}}
+      }
+    }
+  });
+}
+
+function renderWageChart(labels,wage){
+  if(wageChart)wageChart.destroy();
+  var zero=labels.map(function(){return 0;});
+  wageChart=new Chart(document.getElementById('wage-chart').getContext('2d'),{
+    type:'line',
+    data:{labels:labels,datasets:[
+      {label:'實質工資',data:wage,borderColor:'#5AA88A',
+       segment:{borderColor:function(ctx){return ctx.p1.parsed.y<0?'#C86868':'#5AA88A';}},
+       backgroundColor:'rgba(90,168,138,0.08)',borderWidth:2,
+       pointRadius:wage.map(function(v,i){return i===wage.length-1?6:0;}),
+       pointHoverRadius:4,tension:0.3,fill:false},
+      {label:'0%',data:zero,borderColor:'#C04040',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){
+        if(c.datasetIndex===0)return' 實質工資YoY: '+c.parsed.y.toFixed(1)+'%';return'';}}}},
+      scales:{
+        y:{suggestedMin:-3,suggestedMax:3,ticks:{callback:function(v){return v.toFixed(0)+'%';},color:'#5AA88A',font:{size:10}},
+          grid:{color:'rgba(255,255,255,0.04)'}},
+        x:{ticks:{callback:function(val,idx){var l=labels[idx];return l&&l.endsWith('-01')?l.slice(0,4):'';},
+          color:'#4A6580',font:{size:10},maxRotation:0,autoSkip:false},grid:{display:false}}
+      }
+    }
+  });
+}
+
+function renderInsights(labels,pce,ndx,hy,fed,wage){
   var rets=ndx.map(function(v,i){return i===0?null:(v-ndx[i-1])/ndx[i-1]*100;});
   var allPCE=[],allRet=[];
   labels.forEach(function(d,i){if(rets[i]!==null){allPCE.push(pce[i]);allRet.push(rets[i]);}});
@@ -427,6 +546,23 @@ function renderInsights(labels,pce,ndx,hy){
     :latestHY>5
     ?'利差走闊至5%以上，市場開始要求更高風險補償，需留意是否進一步惡化。'
     :'利差處於低檔，信用市場穩定，尚未對股市構成壓力。此指標一旦快速跳升，往往領先股市修正。';
+  var latestFed=fed[fed.length-1];
+  var fedHikes=0;
+  for(var fi=fed.length-1;fi>0;fi--){
+    if(fed[fi]>fed[fi-1])fedHikes++;
+    else if(fed[fi]<fed[fi-1])break;
+  }
+  var fedMsg=fedHikes>=3
+    ?'Fed 已連續升息 '+fedHikes+' 次，達到原文所指的結構性傷害門檻。連續緊縮會壓抑估值、加重企業利息負擔，是2022重演的核心引擎。'
+    :fedHikes>=1
+    ?'Fed 近期升息 '+fedHikes+' 次，尚未達連升3次的警戒門檻，但需留意後續是否轉為連續緊縮。'
+    :'Fed 目前未在升息循環，利率環境對風險資產相對友善。一旦轉為連續升息，估值壓力會迅速浮現。';
+  var latestWage=wage[wage.length-1];
+  var wageMsg=latestWage<0
+    ?'實質工資已轉負（'+latestWage.toFixed(1)+'%），薪水追不上物價、購買力縮水，正是原文第4條件的警訊，將從需求面拖累經濟。'
+    :latestWage<0.5
+    ?'實質工資年增僅 '+latestWage.toFixed(1)+'%，購買力幾乎停滯，接近榮枯線，需留意是否轉負。'
+    :'實質工資年增 '+latestWage.toFixed(1)+'%，購買力正成長，消費端尚有支撐，暫無第4條件的衰退壓力。';
   var items=[
     {icon:'📉',bg:'rgba(192,64,64,0.15)',
      title:'整體呈中度負相關（r = '+r_all.toFixed(3)+'）',
@@ -443,6 +579,12 @@ function renderInsights(labels,pce,ndx,hy){
     {icon:'💳',bg:'rgba(200,136,40,0.15)',
      title:'信用利差（HY OAS '+latestHY.toFixed(2)+'%）：第二道風險閘門',
      body:hyMsg},
+    {icon:'🏦',bg:'rgba(106,143,200,0.15)',
+     title:'Fed 政策（利率上限 '+latestFed.toFixed(2)+'%）：緊縮引擎',
+     body:fedMsg},
+    {icon:'💵',bg:'rgba(90,168,138,0.15)',
+     title:'實質工資（'+latestWage.toFixed(1)+'%）：需求面安全閥',
+     body:wageMsg},
   ];
   document.getElementById('insight-list').innerHTML=items.map(function(it){
     return '<div class="insight-item"><div class="insight-icon" style="background:'+it.bg+';">'+it.icon+'</div>'
@@ -450,18 +592,20 @@ function renderInsights(labels,pce,ndx,hy){
   }).join('');
 }
 
-function renderAll(labels,pce,ndx,hy){
-  renderStats(labels,pce,ndx,hy);
+function renderAll(labels,pce,ndx,hy,fed,wage){
+  renderStats(labels,pce,ndx,hy,fed,wage);
   renderMainChart(labels,pce,ndx);
   renderPeriodBars(labels,pce,ndx);
   renderLagChart(labels,pce,ndx);
   renderScatter(labels,pce,ndx);
   renderHYChart(labels,hy);
-  renderInsights(labels,pce,ndx,hy);
+  renderFedChart(labels,fed);
+  renderWageChart(labels,wage);
+  renderInsights(labels,pce,ndx,hy,fed,wage);
 }
 
 // ── 主流程：直接用內建數據渲染（資料由 GitHub Actions 每月更新）──
-renderAll(BUILTIN_LABELS,BUILTIN_PCE,BUILTIN_NDX,BUILTIN_HY);
+renderAll(BUILTIN_LABELS,BUILTIN_PCE,BUILTIN_NDX,BUILTIN_HY,BUILTIN_FED,BUILTIN_WAGE);
 
 // 資料新鮮度檢查：若內建資料截止月份距今超過 2 個月，顯示提醒
 (function(){

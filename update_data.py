@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """
 update_data.py
-從 FRED 抓取最新的 核心PCE（YoY%）、那斯達克、HY OAS 數據，
-直接寫回 pce-nasdaq.html 內建的資料區塊，供 GitHub Actions 每月自動執行。
+從 FRED 抓取最新數據，直接寫回 pce-nasdaq.html 內建的資料區塊，
+供 GitHub Actions 每月自動執行。前端不需 API key / proxy。
 
-前端不再呼叫 FRED、不再需要 API key、不再需要 CORS proxy。
-GitHub Pages 永遠是最新資料。
+監控指標（原文 2022 重演 5 條件中可量化者）：
+  1. 核心PCE 年增率   PCEPILFE (units=pc1)         > 4% 警戒
+  2. Fed 目標利率上限 DFEDTARU                      連升 3 次以上
+  4. 實質工資年增率   CES0500000003 - CPIAUCSL(pc1) 轉負為警訊
+  5. 高收益債利差     BAMLH0A0HYM2                  > 4% 觀察
+（第3項 EPS 下修無免費自動來源，未納入）
 
-需要環境變數 FRED_API_KEY（在 repo 的 Settings > Secrets 設定）。
+需要環境變數 FRED_API_KEY。
 """
 
 import json
@@ -20,21 +24,19 @@ import urllib.request
 FRED_KEY = os.environ.get("FRED_API_KEY", "").strip()
 HTML_PATH = os.path.join(os.path.dirname(__file__), "pce-nasdaq.html")
 
-# FRED 序列設定
-# - 核心PCE：PCEPILFE 是「指數」，必須用 units=pc1 轉成「較一年前變化%」才會是 YoY 年增率
-# - 那斯達克：NASDAQCOM 是日資料，用 frequency=m + aggregation_method=avg 轉成月均
-# - HY OAS：BAMLH0A0HYM2 是日資料（百分點），同樣轉月均
-SERIES = {
-    "pce": {"id": "PCEPILFE", "units": "pc1", "freq": "m", "agg": "avg", "round": 1},
-    "ndx": {"id": "NASDAQCOM", "units": "lin", "freq": "m", "agg": "avg", "round": 0},
-    "hy":  {"id": "BAMLH0A0HYM2", "units": "lin", "freq": "m", "agg": "avg", "round": 2},
-}
-
 START = "2015-01-01"
+
+SERIES = {
+    "pce": {"id": "PCEPILFE",     "units": "pc1", "freq": "m", "agg": "avg", "round": 1},
+    "ndx": {"id": "NASDAQCOM",    "units": "lin", "freq": "m", "agg": "avg", "round": 0},
+    "hy":  {"id": "BAMLH0A0HYM2", "units": "lin", "freq": "m", "agg": "avg", "round": 2},
+    "fed": {"id": "DFEDTARU",     "units": "lin", "freq": "m", "agg": "eop", "round": 2},
+    "wage_nom": {"id": "CES0500000003", "units": "pc1", "freq": "m", "agg": "avg"},
+    "cpi":      {"id": "CPIAUCSL",       "units": "pc1", "freq": "m", "agg": "avg"},
+}
 
 
 def fetch_series(cfg):
-    """抓單一序列，回傳 {YYYY-MM: value} 字典。"""
     params = {
         "series_id": cfg["id"],
         "api_key": FRED_KEY,
@@ -48,28 +50,50 @@ def fetch_series(cfg):
     req = urllib.request.Request(url, headers={"User-Agent": "jc-dashboard-updater"})
     with urllib.request.urlopen(req, timeout=30) as resp:
         data = json.loads(resp.read().decode("utf-8"))
-
     out = {}
     for obs in data.get("observations", []):
         v = obs.get("value", ".")
         if v in (".", "", None):
             continue
-        month = obs["date"][:7]  # YYYY-MM
-        out[month] = float(v)
+        out[obs["date"][:7]] = float(v)
     if not out:
         raise RuntimeError(f"{cfg['id']} 回傳 0 筆有效資料")
     return out
 
 
+def month_range(start_ym, end_ym):
+    sy, sm = map(int, start_ym.split("-"))
+    ey, em = map(int, end_ym.split("-"))
+    out = []
+    y, m = sy, sm
+    while (y, m) <= (ey, em):
+        out.append(f"{y}-{m:02d}")
+        m += 1
+        if m > 12:
+            m = 1
+            y += 1
+    return out
+
+
+def align(series_dict, labels):
+    """依 labels 對齊；缺漏用前值 forward-fill，開頭缺用第一個有效值。"""
+    out = []
+    last = None
+    first_valid = next((series_dict[m] for m in labels if m in series_dict), None)
+    for m in labels:
+        if m in series_dict:
+            last = series_dict[m]
+        out.append(last if last is not None else first_valid)
+    return out
+
+
 def fmt(value, ndigits):
-    """依精度格式化：整數不留小數點。"""
     if ndigits == 0:
         return str(int(round(value)))
     return f"{round(value, ndigits)}"
 
 
 def build_js_array(name, values):
-    """產生像 var NAME = [ ... ]; 的 JS 陣列，每行 12 筆方便閱讀。"""
     lines = []
     for i in range(0, len(values), 12):
         chunk = ",".join(values[i:i + 12])
@@ -86,11 +110,7 @@ def build_labels_array(labels):
 
 
 def replace_block(html, var_name, new_block):
-    """用正則把 var XXX = [ ... ]; 整段換掉。"""
-    pattern = re.compile(
-        r"var\s+" + re.escape(var_name) + r"\s*=\s*\[.*?\];",
-        re.DOTALL,
-    )
+    pattern = re.compile(r"var\s+" + re.escape(var_name) + r"\s*=\s*\[.*?\];", re.DOTALL)
     if not pattern.search(html):
         raise RuntimeError(f"在 HTML 中找不到 {var_name} 區塊")
     return pattern.sub(lambda m: new_block, html, count=1)
@@ -105,20 +125,27 @@ def main():
     pce = fetch_series(SERIES["pce"])
     ndx = fetch_series(SERIES["ndx"])
     hy = fetch_series(SERIES["hy"])
+    fed = fetch_series(SERIES["fed"])
+    wage_nom = fetch_series(SERIES["wage_nom"])
+    cpi = fetch_series(SERIES["cpi"])
 
-    # 只保留三個序列都有值的月份，並排序
-    common = sorted(set(pce) & set(ndx) & set(hy))
-    if not common:
-        print("ERROR: 三序列無共同月份", file=sys.stderr)
-        sys.exit(1)
+    real_wage = {}
+    for m in set(wage_nom) & set(cpi):
+        real_wage[m] = wage_nom[m] - cpi[m]
 
-    labels = common
-    pce_vals = [fmt(pce[m], SERIES["pce"]["round"]) for m in labels]
-    ndx_vals = [fmt(ndx[m], SERIES["ndx"]["round"]) for m in labels]
-    hy_vals = [fmt(hy[m], SERIES["hy"]["round"]) for m in labels]
+    pce_months = sorted(pce)
+    labels = month_range(pce_months[0], pce_months[-1])
+    labels = [m for m in labels if m >= "2015-01"]
+
+    pce_vals = [fmt(v, SERIES["pce"]["round"]) for v in align(pce, labels)]
+    ndx_vals = [fmt(v, SERIES["ndx"]["round"]) for v in align(ndx, labels)]
+    hy_vals = [fmt(v, SERIES["hy"]["round"]) for v in align(hy, labels)]
+    fed_vals = [fmt(v, SERIES["fed"]["round"]) for v in align(fed, labels)]
+    wage_vals = [fmt(v, 1) for v in align(real_wage, labels)]
 
     print(f"  範圍：{labels[0]} ~ {labels[-1]}（{len(labels)} 個月）")
-    print(f"  最新 PCE={pce_vals[-1]}%  NDX={ndx_vals[-1]}  HY={hy_vals[-1]}")
+    print(f"  最新 PCE={pce_vals[-1]}%  NDX={ndx_vals[-1]}  HY={hy_vals[-1]}%"
+          f"  Fed={fed_vals[-1]}%  實質工資={wage_vals[-1]}%")
 
     with open(HTML_PATH, "r", encoding="utf-8") as f:
         html = f.read()
@@ -127,17 +154,14 @@ def main():
     html = replace_block(html, "BUILTIN_PCE", build_js_array("BUILTIN_PCE", pce_vals))
     html = replace_block(html, "BUILTIN_NDX", build_js_array("BUILTIN_NDX", ndx_vals))
     html = replace_block(html, "BUILTIN_HY", build_js_array("BUILTIN_HY", hy_vals))
+    html = replace_block(html, "BUILTIN_FED", build_js_array("BUILTIN_FED", fed_vals))
+    html = replace_block(html, "BUILTIN_WAGE", build_js_array("BUILTIN_WAGE", wage_vals))
 
-    # 更新前端顯示的「資料截止月份」字串
-    html = re.sub(
-        r"(var\s+BUILTIN_LAST\s*=\s*)'[^']*'",
-        r"\g<1>'" + labels[-1] + "'",
-        html,
-    )
+    html = re.sub(r"(var\s+BUILTIN_LAST\s*=\s*)'[^']*'",
+                  r"\g<1>'" + labels[-1] + "'", html)
 
     with open(HTML_PATH, "w", encoding="utf-8") as f:
         f.write(html)
-
     print(f"已更新 {HTML_PATH}")
 
 
