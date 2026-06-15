@@ -184,7 +184,27 @@
   <footer>資料來源：<a href="https://fred.stlouisfed.org" target="_blank">FRED（BEA / Nasdaq Inc. / ICE BofA）</a>　每月透過 GitHub Actions 自動更新</footer>
 </main>
 
+<button id="pdf-btn" onclick="exportPDF()" title="匯出 PDF 分享給家人"
+  style="position:fixed;right:20px;bottom:20px;z-index:999;display:flex;align-items:center;gap:8px;
+  background:#2A4A6A;color:#CDD8E8;border:1px solid #3A5A7A;border-radius:10px;
+  padding:12px 18px;font-size:14px;font-weight:500;cursor:pointer;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);transition:all 0.2s;font-family:inherit;">
+  <span style="font-size:16px;">📄</span><span id="pdf-btn-text">匯出 PDF</span>
+</button>
+
+<div id="pdf-progress" style="display:none;position:fixed;inset:0;z-index:1000;
+  background:rgba(10,14,22,0.75);align-items:center;justify-content:center;">
+  <div style="background:#1F2840;border:1px solid #3A5A7A;border-radius:12px;padding:24px 32px;
+    color:#CDD8E8;font-size:15px;font-family:inherit;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+    <div style="font-size:24px;margin-bottom:10px;">📄</div>
+    正在產生 PDF…<br>
+    <span style="font-size:12px;color:#9AACBA;">圖表較多時需數秒，請稍候</span>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 // ═══════════════════════════════════════
 // 資料由 GitHub Actions 每月自動從 FRED 更新並寫入下方陣列
@@ -629,36 +649,4 @@ function renderInsights(labels,pce,ndx,hy,fed,wage){
 }
 
 function renderAll(labels,pce,ndx,hy,fed,wage){
-  renderStats(labels,pce,ndx,hy,fed,wage);
-  renderMainChart(labels,pce,ndx);
-  renderPeriodBars(labels,pce,ndx);
-  renderLagChart(labels,pce,ndx);
-  renderScatter(labels,pce,ndx);
-  renderHYChart(labels,hy);
-  renderFedChart(labels,fed);
-  renderWageChart(labels,wage);
-  renderInsights(labels,pce,ndx,hy,fed,wage);
-}
-
-// ── 主流程：直接用內建數據渲染（資料由 GitHub Actions 每月更新）──
-renderAll(BUILTIN_LABELS,BUILTIN_PCE,BUILTIN_NDX,BUILTIN_HY,BUILTIN_FED,BUILTIN_WAGE);
-
-// 資料新鮮度檢查：若內建資料截止月份距今超過 2 個月，顯示提醒
-(function(){
-  var parts=BUILTIN_LAST.split('-');
-  var dataDate=new Date(parseInt(parts[0]),parseInt(parts[1])-1,1);
-  var now=new Date();
-  var months=(now.getFullYear()-dataDate.getFullYear())*12+(now.getMonth()-dataDate.getMonth());
-  var note=document.getElementById('update-note');
-  if(months>=3){
-    note.innerHTML='⚠ 資料已 '+months+' 個月未更新（截止 '+BUILTIN_LAST+'）。'
-      +'PCE/HY 通常隔月公布，請確認 GitHub Actions 自動更新是否正常。';
-    note.style.color='#E0B060';
-  }else{
-    note.textContent='📊 資料截止 '+BUILTIN_LAST+'　每月由 FRED 自動更新';
-    note.style.color='#4A6580';
-  }
-})();
-</script>
-</body>
-</html>
+  renderStats(labels,pce
