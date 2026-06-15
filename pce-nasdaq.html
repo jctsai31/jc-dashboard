@@ -649,4 +649,103 @@ function renderInsights(labels,pce,ndx,hy,fed,wage){
 }
 
 function renderAll(labels,pce,ndx,hy,fed,wage){
-  renderStats(labels,pce
+  renderStats(labels,pce,ndx,hy,fed,wage);
+  renderMainChart(labels,pce,ndx);
+  renderPeriodBars(labels,pce,ndx);
+  renderLagChart(labels,pce,ndx);
+  renderScatter(labels,pce,ndx);
+  renderHYChart(labels,hy);
+  renderFedChart(labels,fed);
+  renderWageChart(labels,wage);
+  renderInsights(labels,pce,ndx,hy,fed,wage);
+}
+
+// ── 主流程：直接用內建數據渲染（資料由 GitHub Actions 每月更新）──
+renderAll(BUILTIN_LABELS,BUILTIN_PCE,BUILTIN_NDX,BUILTIN_HY,BUILTIN_FED,BUILTIN_WAGE);
+
+// 資料新鮮度檢查：若內建資料截止月份距今超過 2 個月，顯示提醒
+(function(){
+  var parts=BUILTIN_LAST.split('-');
+  var dataDate=new Date(parseInt(parts[0]),parseInt(parts[1])-1,1);
+  var now=new Date();
+  var months=(now.getFullYear()-dataDate.getFullYear())*12+(now.getMonth()-dataDate.getMonth());
+  var note=document.getElementById('update-note');
+  if(months>=3){
+    note.innerHTML='⚠ 資料已 '+months+' 個月未更新（截止 '+BUILTIN_LAST+'）。'
+      +'PCE/HY 通常隔月公布，請確認 GitHub Actions 自動更新是否正常。';
+    note.style.color='#E0B060';
+  }else{
+    note.textContent='📊 資料截止 '+BUILTIN_LAST+'　每月由 FRED 自動更新';
+    note.style.color='#4A6580';
+  }
+})();
+</script>
+<script>
+// ── PDF 匯出：用 html2canvas 截圖整個儀表板，配色完全保留 ──
+function exportPDF(){
+  var btn=document.getElementById('pdf-btn');
+  var btnText=document.getElementById('pdf-btn-text');
+  var target=document.querySelector('main');
+  if(!target||typeof html2canvas==='undefined'||!window.jspdf){
+    alert('PDF 函式庫載入中，請稍候幾秒再試一次。');
+    return;
+  }
+  // 匯出時暫時隱藏按鈕本身，避免被拍進去
+  btn.style.visibility='hidden';
+  btn.disabled=true;
+  var progress=document.getElementById('pdf-progress');
+  progress.style.display='flex';
+
+  var bg='#1A1F2E'; // 與頁面深色背景一致
+  html2canvas(target,{
+    backgroundColor:bg,
+    scale:2,            // 2倍解析度，文字圖表清晰
+    useCORS:true,
+    logging:false,
+    windowWidth:target.scrollWidth
+  }).then(function(canvas){
+    var imgData=canvas.toDataURL('image/jpeg',0.95);
+    var jsPDF=window.jspdf.jsPDF;
+    // 用 A4 直式，圖寬對齊頁寬，過長則自動分頁
+    var pdf=new jsPDF('p','mm','a4');
+    var pageW=pdf.internal.pageSize.getWidth();
+    var pageH=pdf.internal.pageSize.getHeight();
+    var imgW=pageW;
+    var imgH=canvas.height*imgW/canvas.width;
+    var heightLeft=imgH;
+    var position=0;
+
+    // 第一頁先鋪滿深色底，避免分頁接縫處露白
+    pdf.setFillColor(26,31,46);
+    pdf.rect(0,0,pageW,pageH,'F');
+    pdf.addImage(imgData,'JPEG',0,position,imgW,imgH);
+    heightLeft-=pageH;
+
+    while(heightLeft>0){
+      position-=pageH;
+      pdf.addPage();
+      pdf.setFillColor(26,31,46);
+      pdf.rect(0,0,pageW,pageH,'F');
+      pdf.addImage(imgData,'JPEG',0,position,imgW,imgH);
+      heightLeft-=pageH;
+    }
+
+    var today=new Date().toISOString().slice(0,10);
+    pdf.save('儀表板_'+today+'.pdf');
+
+    progress.style.display='none';
+    btn.style.visibility='visible';
+    btnText.textContent='匯出 PDF';
+    btn.disabled=false;
+  }).catch(function(err){
+    console.error(err);
+    alert('產生 PDF 時發生問題，請重試。');
+    progress.style.display='none';
+    btn.style.visibility='visible';
+    btnText.textContent='匯出 PDF';
+    btn.disabled=false;
+  });
+}
+</script>
+</body>
+</html>
